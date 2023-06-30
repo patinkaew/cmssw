@@ -113,4 +113,7 @@
      <version ClassVersion="3" checksum="3062549710"/>
    </class>
    <class name="edm::Wrapper<HcalUMNioDigi>" splitLevel="0"/>
+
+   <class name="hcal::HcalPhase1DigiSoA"/>
+   <class name="hcal::HcalPhase0DigiSoA::View"/>
 </lcgdict>

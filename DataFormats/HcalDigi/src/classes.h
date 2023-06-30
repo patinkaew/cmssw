@@ -6,6 +6,7 @@
 #include "DataFormats/HcalDigi/interface/HODataFrame.h"
 #include "DataFormats/HcalDigi/interface/HcalHistogramDigi.h"
 #include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
+#include "DataFormats/HcalDigi/interface/HcalDigiSoA.h"
 #include "DataFormats/HcalDigi/interface/HcalUnpackerReport.h"
 #include "DataFormats/HcalDigi/interface/HcalLaserDigi.h"
 #include "DataFormats/HcalDigi/interface/HcalTTPDigi.h"
