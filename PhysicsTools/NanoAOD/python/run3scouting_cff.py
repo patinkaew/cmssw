@@ -58,8 +58,8 @@ electronScoutingTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProdu
 
 scoutingMuon = cms.EDProducer("Run3ScoutingMuonVtxIndexProducer",
     src = cms.InputTag("hltScoutingMuonPacker"),
-    num_vertices_name = "ScoutingMuonNumVertices",
-    vertex_index_collection_name = "ScoutingMuonVertexIndexCollection",
+    num_vertices_name = cms.string("ScoutingMuonNumVertices"),
+    vertex_index_collection_name = cms.string("ScoutingMuonVertexIndexCollection"),
 )
 
 muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
@@ -126,15 +126,18 @@ muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
          trk_vz = Var('trk_vz', 'float', precision=10, doc='track vz'),
      ),
      externalVariables = cms.PSet(
-         nVertex = ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonNumVertices"), "uint", doc="number of associated vertices")
+         nVertex = ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonNumVertices"), "uint", doc="number of associated vertices"),
+         #VertexIndex =ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonVertexIndexCollection"), "int", doc="flatten list of muon's associated vertex indices") 
+     )
 )
 
-muonVtxIndexTable = cms.EDProducer("GlobalVariablesTableProducer",
-    name = cms.string(""),
-    variables = cms.PSet(
-        ScoutingMuonVertexIndex = ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonVertexIndexCollection"), "int", doc = "flatten list of muon's associated vertex indices" ),
-    )
-)
+# muonVtxIndexTable = cms.EDProducer("SimpleIntFlatTableProducer",
+#     src = cms.InputTag("scoutingMuon","ScoutingMuonVertexIndexCollection"),
+#     name = cms.string("ScoutingMuonVertexIndexCollection"),
+#     # externalVariables = cms.PSet(
+#     #     VertexIndex = ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonVertexIndexCollection"), "int", doc = "flatten list of muon's associated vertex indices" ),
+#     # )
+# )
 
 trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
      src = cms.InputTag("hltScoutingTrackPacker"),

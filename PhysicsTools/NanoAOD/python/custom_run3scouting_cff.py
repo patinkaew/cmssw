@@ -35,9 +35,10 @@ genJetTask = cms.Task(ak4ScoutingJetMatchGen,ak4ScoutingJetExtTable,ak8ScoutingJ
 puTask = cms.Task(puTable)
 
 nanoTableTaskCommon = cms.Task(photonScoutingTable,
-                               electronScoutingTable
+                               electronScoutingTable,
                                muonTask,
                                muonScoutingTable,
+                               #muonVtxIndexTable,
                                trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,
                                rhoScoutingTable,metScoutingTable,jetScoutingTable,
                                particleTask,particleTableTask,

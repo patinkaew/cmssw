@@ -57,6 +57,8 @@ typedef SimpleFlatTableProducer<Run3ScoutingTrack> SimpleRun3ScoutingTrackFlatTa
 #include "DataFormats/Scouting/interface/Run3ScoutingPFJet.h"
 typedef SimpleFlatTableProducer<Run3ScoutingPFJet> SimpleRun3ScoutingPFJetFlatTableProducer;
 
+typedef SimpleFlatTableProducer<int> SimpleIntFlatTableProducer;
+
 #include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(SimpleCandidateFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleGenEventFlatTableProducer);
@@ -77,3 +79,4 @@ DEFINE_FWK_MODULE(SimpleRun3ScoutingMuonFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingElectronFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingTrackFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingPFJetFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleIntFlatTableProducer);
