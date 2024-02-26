@@ -56,7 +56,7 @@ electronScoutingTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProdu
      )
 )
 
-scoutingMuon = cms.EDProducer("Run3ScoutingMuonVtxIndexProducer",
+scoutingMuonTable = cms.EDProducer("Run3ScoutingMuonVtxIndexProducer",
     src = cms.InputTag("hltScoutingMuonPacker"),
     num_vertices_name = cms.string("ScoutingMuonNumVertices"),
     vertex_index_collection_name = cms.string("ScoutingMuonVertexIndexCollection"),
@@ -126,7 +126,7 @@ muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
          trk_vz = Var('trk_vz', 'float', precision=10, doc='track vz'),
      ),
      externalVariables = cms.PSet(
-         nVertex = ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonNumVertices"), "uint", doc="number of associated vertices"),
+         nVertex = ExtVar(cms.InputTag("scoutingMuonTable", "ScoutingMuonNumVertices"), "uint", doc="number of associated vertices"),
          #VertexIndex =ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonVertexIndexCollection"), "int", doc="flatten list of muon's associated vertex indices") 
      )
 )

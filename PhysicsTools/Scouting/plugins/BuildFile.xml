@@ -2,5 +2,6 @@
 <use name="fastjet-contrib"/>
 <use name="PhysicsTools/PatAlgos"/>
 <library file="*.cc" name="PhysicsToolsScoutingPlugins">
+  <use name="DataFormats/NanoAOD"/>
   <flags EDM_PLUGIN="1"/>
 </library>

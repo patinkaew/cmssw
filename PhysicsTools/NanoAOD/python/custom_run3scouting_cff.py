@@ -13,7 +13,7 @@ particleTask = cms.Task(scoutingPFCands)
 particleTableTask = cms.Task(particleScoutingTable)
 ak4JetTableTask = cms.Task(ak4ScoutingJets,ak4ScoutingJetParticleNetJetTagInfos,ak4ScoutingJetParticleNetJetTags,ak4ScoutingJetTable)
 scoutingReclusteredJetCHSTableTask = cms.Task(scoutingPFCHSCands, scoutingReclusteredJetCHS, scoutingReclusteredJetCHSTable)
-muonTask = cms.Task(scoutingMuon)
+muonTableTask = cms.Task(scoutingMuonTable)
 vertexTask = cms.Task(scoutingVertices)
 puppiTask = cms.Task(scoutingPuppiWeights)
 scoutingReclusteredJetPuppiTableTask = cms.Task(scoutingReclusteredJetPuppi, scoutingReclusteredJetPuppiTable)
@@ -36,7 +36,7 @@ puTask = cms.Task(puTable)
 
 nanoTableTaskCommon = cms.Task(photonScoutingTable,
                                electronScoutingTable,
-                               muonTask,
+                               muonTableTask,
                                muonScoutingTable,
                                #muonVtxIndexTable,
                                trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,

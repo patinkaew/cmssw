@@ -18,9 +18,9 @@ class Run3ScoutingMuonVtxIndexProducer: public edm::stream::EDProducer<>{
     ~Run3ScoutingMuonVtxIndexProducer() override = default;
 
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
-    void beginStream(edm::StreamID) override {}
+    //void beginStream(edm::StreamID) override {}
     void produce(edm::Event &iEvent, edm::EventSetup const &setup) override;
-    void endStream() override {}
+    //void endStream() override {}
 
   private:
     const edm::EDGetTokenT<std::vector<Run3ScoutingMuon>> input_scouting_muon_token_;
@@ -35,7 +35,7 @@ Run3ScoutingMuonVtxIndexProducer::Run3ScoutingMuonVtxIndexProducer(const edm::Pa
     vertex_index_collection_name_(iConfig.getParameter<std::string>("vertex_index_collection_name")){
     //produces<Run3ScoutingMuon>();
   produces<edm::ValueMap<uint>>(num_vertices_name_);
-  produces<std::vector<int>>(vertex_index_collection_name_);
+  //produces<std::vector<int>>(vertex_index_collection_name_);
   produces<nanoaod::FlatTable>(vertex_index_collection_name_);
 }
 
@@ -49,9 +49,9 @@ void Run3ScoutingMuonVtxIndexProducer::produce(edm::Event &iEvent, edm::EventSet
 
   for(auto &muon : *scouting_muon_handle){
     num_vertices->push_back(muon.vtxIndx().size());
-    std::cout << muon.vtxIndx().size() << std::endl; 
+    //std::cout << muon.vtxIndx().size() << std::endl; 
     for(auto &muon_vtx_idx: muon.vtxIndx()) vertex_indices->push_back(muon_vtx_idx);
-    for(auto &vertex_index: *vertex_indices) std::cout << vertex_index << std::endl;  
+    //for(auto &vertex_index: *vertex_indices) std::cout << vertex_index << std::endl;  
   }
 
   //edm::OrphanHandle<std::vector<Run3ScoutingMuon>> oh(scouting_muon_handle);
@@ -62,7 +62,7 @@ void Run3ScoutingMuonVtxIndexProducer::produce(edm::Event &iEvent, edm::EventSet
   filler_num_vertices.fill();
   iEvent.put(std::move(num_vertices_VM), num_vertices_name_);
 
-  iEvent.put(std::move(vertex_indices), vertex_index_collection_name_);
+  //iEvent.put(std::move(vertex_indices), vertex_index_collection_name_);
   
   auto vertex_index_table = std::make_unique<nanoaod::FlatTable>(vertex_indices->size(), vertex_index_collection_name_, false);
   vertex_index_table->addColumn<int>("VertexIndex", *vertex_indices, "flatten list of muon's associated vertex indices");
