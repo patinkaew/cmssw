@@ -28,6 +28,12 @@ photonScoutingTable = cms.EDProducer("SimpleRun3ScoutingPhotonFlatTableProducer"
      )
 )
 
+electronScoutingArrayTable = cms.EDProducer("Run3ScoutingElectronArrayTableProducer",
+    src = cms.InputTag("hltScoutingEgammaPacker"),
+    #num_tracks_name = cms.string("ScoutingElectronNumTracks"),
+    track_collection_name = cms.string("ScoutingElectronTrack"),
+)
+
 electronScoutingTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProducer",
      src = cms.InputTag("hltScoutingEgammaPacker"),
      cut = cms.string(""),
@@ -53,13 +59,16 @@ electronScoutingTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProdu
          sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
          sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
          seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
+         nTrack = Var('trkd0().size()', "uint", doc="number of associated tracks"),
      )
 )
 
-scoutingMuonTable = cms.EDProducer("Run3ScoutingMuonVtxIndexProducer",
+muonScoutingArrayTable = cms.EDProducer("Run3ScoutingMuonArrayTableProducer",
     src = cms.InputTag("hltScoutingMuonPacker"),
-    num_vertices_name = cms.string("ScoutingMuonNumVertices"),
-    vertex_index_collection_name = cms.string("ScoutingMuonVertexIndexCollection"),
+    #num_vertices_name = cms.string("ScoutingMuonNumVertices"),
+    vertex_index_collection_name = cms.string("ScoutingMuonVertexIndex"),
+    #num_hit_patterns_name = cms.string("ScoutingMuonNumHitPatterns"),
+    hit_pattern_collection_name = cms.string("ScoutingMuonTrackHitPattern"),
 )
 
 muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
@@ -124,20 +133,17 @@ muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
          trk_vx = Var('trk_vx', 'float', precision=10, doc='track vx'),
          trk_vy = Var('trk_vy', 'float', precision=10, doc='track vy'),
          trk_vz = Var('trk_vz', 'float', precision=10, doc='track vz'),
-     ),
-     externalVariables = cms.PSet(
-         nVertex = ExtVar(cms.InputTag("scoutingMuonTable", "ScoutingMuonNumVertices"), "uint", doc="number of associated vertices"),
-         #VertexIndex =ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonVertexIndexCollection"), "int", doc="flatten list of muon's associated vertex indices") 
+         nVertex = Var('vtxIndx().size()', "uint", doc="number of associated vertices"),
+         trk_hitPattern_hitCount = Var('trk_hitPattern().hitCount', 'uint8', doc='number of associated vertices'),
+         trk_hitPattern_beginTrackHits = Var('trk_hitPattern().beginTrackHits', "uint8", doc="track hit pattern begin track hit"),
+         trk_hitPattern_endTrackHits = Var('trk_hitPattern().endTrackHits', "uint8", doc="track hit pattern end track hit"),
+         trk_hitPattern_beginInner = Var('trk_hitPattern().beginInner', "uint8", doc="track hit pattern begin inner"),
+         trk_hitPattern_endInner = Var('trk_hitPattern().endInner', "uint8", doc="track hit pattern end inner"),
+         trk_hitPattern_beginOuter = Var('trk_hitPattern().beginOuter', "uint8", doc="track hit pattern begin outer"),
+         trk_hitPattern_endOuter = Var('trk_hitPattern().endOuter', "uint8", doc="track hit pattern end outer"),
+         nTrackHitPattern = Var('trk_hitPattern().hitPattern.size()', "uint", doc="number of associated hit patterns"),
      )
 )
-
-# muonVtxIndexTable = cms.EDProducer("SimpleIntFlatTableProducer",
-#     src = cms.InputTag("scoutingMuon","ScoutingMuonVertexIndexCollection"),
-#     name = cms.string("ScoutingMuonVertexIndexCollection"),
-#     # externalVariables = cms.PSet(
-#     #     VertexIndex = ExtVar(cms.InputTag("scoutingMuon", "ScoutingMuonVertexIndexCollection"), "int", doc = "flatten list of muon's associated vertex indices" ),
-#     # )
-# )
 
 trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
      src = cms.InputTag("hltScoutingTrackPacker"),

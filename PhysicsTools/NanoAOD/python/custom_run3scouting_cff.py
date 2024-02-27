@@ -9,11 +9,12 @@ from PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi import selectedPatTri
 from PhysicsTools.PatAlgos.slimming.slimmedPatTrigger_cfi import slimmedPatTrigger
 
 # common tasks
+electronTableTask = cms.Task(electronScoutingArrayTable, electronScoutingTable)
+muonTableTask = cms.Task(muonScoutingArrayTable, muonScoutingTable)
 particleTask = cms.Task(scoutingPFCands)
 particleTableTask = cms.Task(particleScoutingTable)
 ak4JetTableTask = cms.Task(ak4ScoutingJets,ak4ScoutingJetParticleNetJetTagInfos,ak4ScoutingJetParticleNetJetTags,ak4ScoutingJetTable)
 scoutingReclusteredJetCHSTableTask = cms.Task(scoutingPFCHSCands, scoutingReclusteredJetCHS, scoutingReclusteredJetCHSTable)
-muonTableTask = cms.Task(scoutingMuonTable)
 vertexTask = cms.Task(scoutingVertices)
 puppiTask = cms.Task(scoutingPuppiWeights)
 scoutingReclusteredJetPuppiTableTask = cms.Task(scoutingReclusteredJetPuppi, scoutingReclusteredJetPuppiTable)
@@ -35,11 +36,10 @@ genJetTask = cms.Task(ak4ScoutingJetMatchGen,ak4ScoutingJetExtTable,ak8ScoutingJ
 puTask = cms.Task(puTable)
 
 nanoTableTaskCommon = cms.Task(photonScoutingTable,
-                               electronScoutingTable,
+                               electronTableTask,
                                muonTableTask,
-                               muonScoutingTable,
-                               #muonVtxIndexTable,
-                               trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,
+                               trackScoutingTable,
+                               primaryvertexScoutingTable,displacedvertexScoutingTable,
                                rhoScoutingTable,metScoutingTable,jetScoutingTable,
                                particleTask,particleTableTask,
                                particleOfflineTable,
