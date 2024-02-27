@@ -9,13 +9,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-//#include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/Scouting/interface/Run3ScoutingVertex.h"
 #include "DataFormats/Common/interface/OrphanHandle.h"
-
-//#include "SimGeneral/HepPDTRecord/interface/ParticleDataTable.h"
-//#include "fastjet/contrib/SoftKiller.hh"
 
 class Run3ScoutingVertexToRecoVertexProducer : public edm::stream::EDProducer<> {
 public:
