@@ -52,9 +52,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       auto const& endcapValues = containers[1].second;
       for (uint64_t i = 0; i < endcapValues.size(); ++i) {
         auto const pulseShapeId = endcapValues[i].pulseShapeID();
+        if (pulseShapeId == 0)
+          continue;
         if (auto const iter = idCache.find(pulseShapeId); iter == idCache.end()) {
-          if (pulseShapeId == 0)
-            continue;
           idCache[pulseShapeId] = idCache.size();
         }
       }
@@ -68,7 +68,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         auto vi = recoView[i];
         vi.param1() = barrelValues[i].param1();
         vi.param2() = barrelValues[i].param2();
-        vi.ids() = idCache[barrelValues[i].pulseShapeID()];  //idx of the pulseShape of channel i
+        vi.ids() = (barrelValues[i].pulseShapeID()==0) ? 0: idCache.at(barrelValues[i].pulseShapeID());  //idx of the pulseShape of channel i
       }
       // fill in endcap
       auto const offset = barrelValues.size();
@@ -76,7 +76,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         auto vi = recoView[i + offset];
         vi.param1() = endcapValues[i].param1();
         vi.param2() = endcapValues[i].param2();
-        vi.ids() = idCache[endcapValues[i].pulseShapeID()];  //idx of the pulseShape of channel i
+        vi.ids() = (endcapValues[i].pulseShapeID()==0) ? 0 : idCache.at(endcapValues[i].pulseShapeID());  //idx of the pulseShape of channel i
       }
 
       //fill pulseShape views
