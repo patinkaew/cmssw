@@ -732,18 +732,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                   auto const recoParamView = recoParamsWithPS.recoParamView();
                   auto const pulseShapeView = recoParamsWithPS.pulseShapeView();
                   auto const recoPulseShapeId = recoParamView.ids()[hashedId];
-                  auto const* acc25nsVec =
-                      pulseShapeView.acc25nsVec()->data() + recoPulseShapeId * hcal::constants::maxPSshapeBin;
-                  auto const* diff25nsItvlVec =
-                      pulseShapeView.diff25nsItvlVec()->data() + recoPulseShapeId * hcal::constants::maxPSshapeBin;
-                  auto const* accVarLenIdxMinusOneVec =
-                      pulseShapeView.accVarLenIdxMinusOneVec()->data() + recoPulseShapeId * hcal::constants::nsPerBX;
-                  auto const* diffVarItvlIdxMinusOneVec =
-                      pulseShapeView.diffVarItvlIdxMinusOneVec()->data() + recoPulseShapeId * hcal::constants::nsPerBX;
-                  auto const* accVarLenIdxZeroVec =
-                      pulseShapeView.accVarLenIdxZEROVec()->data() + recoPulseShapeId * hcal::constants::nsPerBX;
-                  auto const* diffVarItvlIdxZeroVec =
-                      pulseShapeView.diffVarItvlIdxZEROVec()->data() + recoPulseShapeId * hcal::constants::nsPerBX;
+                  auto const* acc25nsVec = pulseShapeView.acc25nsVec()[recoPulseShapeId].data() ;
+                  auto const* diff25nsItvlVec = pulseShapeView.diff25nsItvlVec()[recoPulseShapeId].data();
+                  auto const* accVarLenIdxMinusOneVec = pulseShapeView.accVarLenIdxMinusOneVec()[recoPulseShapeId].data() ;
+                  auto const* diffVarItvlIdxMinusOneVec = pulseShapeView.diffVarItvlIdxMinusOneVec()[recoPulseShapeId].data() ;
+                  auto const* accVarLenIdxZeroVec = pulseShapeView.accVarLenIdxZEROVec()[recoPulseShapeId].data();
+                  auto const* diffVarItvlIdxZeroVec = pulseShapeView.diffVarItvlIdxZEROVec()[recoPulseShapeId].data() ;
 
                   // offset output arrays
                   auto* pulseMatrix = pulseMatrices + nsamples * npulses * gch;
