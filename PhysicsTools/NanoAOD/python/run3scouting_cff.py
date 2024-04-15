@@ -339,13 +339,13 @@ scoutingRhoTable = cms.EDProducer("GlobalVariablesTableProducer",
 ##### Scouting Derived Objects #####
 ####################################
 
-# Scouting PF Candidates
+# Scouting PF Candidate
 # translation from Run3ScoutingParticle to reco::PFCandidate
 # used as input for standard algorithm, e.g. jet clustering
 
-scoutingPFCands = cms.EDProducer(
-     "Run3ScoutingParticleToRecoPFCandidateProducer",
-     scoutingparticle=cms.InputTag("hltScoutingPFPacker"),
+scoutingPFCandidate = cms.EDProducer("Run3ScoutingParticleToRecoPFCandidateProducer",
+     scoutingparticle = cms.InputTag("hltScoutingPFPacker"),
+     CHS = cms.bool(False),
 )
 
 particleScoutingTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
@@ -373,13 +373,127 @@ particleScoutingTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
     ),
   )
 
+# Scouting PF Candidate with CHS applied
+# translation from Run3ScoutingParticle to reco::PFCandidate
+# used as input for standard algorithm, e.g. jet clustering
+
+scoutingPFCHSCandidate = cms.EDProducer("Run3ScoutingParticleToRecoPFCandidateProducer",
+        scoutingparticle = cms.InputTag("hltScoutingPFPacker"),
+        CHS = cms.bool(True),
+) 
+
 # Scouting Jet Reclustered
 # jets from reclustering PF candidates
 
 from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
-ak4ScoutingJets = ak4PFJets.clone(
-     src = ("scoutingPFCands"),
-     jetPtMin = 20,
+scoutingPFJetRecluster = ak4PFJets.clone(
+     src = ("scoutingPFCandidate"),
+     jetPtMin = 0,
+)
+
+scoutingPFJetReclusterTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+      src = cms.InputTag("scoutingPFJetRecluster"),
+      name = cms.string("ScoutingPFJetRecluster"),
+      cut = cms.string(""),
+      doc = cms.string("Jet from reclustering scouting PF candidates"),
+      singleton = cms.bool(False),
+      extension = cms.bool(False), # this is the main table
+# TODO: move this as extension table
+#      externalVariables = cms.PSet(
+#         particleNet_prob_b = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probb'), float, doc="ParticleNet probability of b", precision=10),
+#         particleNet_prob_bb = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probbb'), float, doc="ParticleNet probability of bb", precision=10),
+#         particleNet_prob_c = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probc'), float, doc="ParticleNet probability of c", precision=10),
+#         particleNet_prob_cc = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probcc'), float, doc="ParticleNet probability of cc", precision=10),
+#         particlenet_prob_uds = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probuds'), float, doc="particlenet probability of uds", precision=10),
+#         particleNet_prob_g = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probg'), float, doc="ParticleNet probability of g", precision=10),
+#         particleNet_prob_undef = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probundef'), float, doc="ParticleNet probability of undef", precision=10),
+#      ),
+      variables = cms.PSet(
+         P4Vars,
+         area = Var("jetArea()", float, doc="jet catchment area, for JECs",precision=10),
+         chHEF = Var("chargedHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Hadron Energy Fraction", precision= 6),
+         neHEF = Var("neutralHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Hadron Energy Fraction", precision= 6),
+         chEmEF = Var("(electronEnergy()+muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Electromagnetic Energy Fraction", precision= 6),
+         neEmEF = Var("(photonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Electromagnetic Energy Fraction", precision= 6),
+         muEF = Var("(muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="muon Energy Fraction", precision= 6),
+         nCh = Var("chargedHadronMultiplicity()", int, doc="number of charged hadrons in the jet"),
+         nNh = Var("neutralHadronMultiplicity()", int, doc="number of neutral hadrons in the jet"),
+         nMuons = Var("muonMultiplicity()", int, doc="number of muons in the jet"),
+         nElectrons = Var("electronMultiplicity()", int, doc="number of electrons in the jet"),
+         nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
+         nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
+      ),
+)
+
+# Scouting PF MET Reclustered
+scoutingRawPFMETRecluster = cms.EDProducer("PFMETProducer",
+    src = cms.InputTag("scoutingPFCandidate"),
+    applyWeight = cms.bool(False),
+)
+
+scoutingRawPFMETReclusterTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src  = cms.InputTag("scoutingRawPFMETRecluster"),
+    name = cms.string("ScoutingRawPFMETRecluster"),
+    doc = cms.string("MET from reclustering scouting PF candidates"),
+    singleton = cms.bool(True),
+    variables = cms.PSet(PTVars,
+        sumEt = Var("sumEt()", float, doc="scalar sum of Et", precision=10),
+    )
+)
+
+# Scouting PFCHS Jet Reclustered
+scoutingCHSJetRecluster = ak4PFJets.clone(
+     src = ("scoutingPFCHSCandidate"),
+     jetPtMin = 0,
+)
+
+scoutingCHSJetReclusterTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+      src = cms.InputTag("scoutingCHSJetRecluster"),
+      name = cms.string("ScoutingCHSJetRecluster"),
+      cut = cms.string(""),
+      doc = cms.string("Jet from reclustering scouting PF candidates with CHS applied"),
+      singleton = cms.bool(False),
+      extension = cms.bool(False), # this is the main table
+    #   externalVariables = cms.PSet(
+    #      particleNet_prob_b = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probb'), float, doc="ParticleNet probability of b", precision=10),
+    #      particleNet_prob_bb = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probbb'), float, doc="ParticleNet probability of bb", precision=10),
+    #      particleNet_prob_c = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probc'), float, doc="ParticleNet probability of c", precision=10),
+    #      particleNet_prob_cc = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probcc'), float, doc="ParticleNet probability of cc", precision=10),
+    #      particlenet_prob_uds = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probuds'), float, doc="particlenet probability of uds", precision=10),
+    #      particleNet_prob_g = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probg'), float, doc="ParticleNet probability of g", precision=10),
+    #      particleNet_prob_undef = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probundef'), float, doc="ParticleNet probability of undef", precision=10),
+    #   ),
+      variables = cms.PSet(
+         P4Vars,
+         area = Var("jetArea()", float, doc="jet catchment area, for JECs",precision=10),
+         chHEF = Var("chargedHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Hadron Energy Fraction", precision= 6),
+         neHEF = Var("neutralHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Hadron Energy Fraction", precision= 6),
+         chEmEF = Var("(electronEnergy()+muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Electromagnetic Energy Fraction", precision= 6),
+         neEmEF = Var("(photonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Electromagnetic Energy Fraction", precision= 6),
+         muEF = Var("(muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="muon Energy Fraction", precision= 6),
+         nCh = Var("chargedHadronMultiplicity()", int, doc="number of charged hadrons in the jet"),
+         nNh = Var("neutralHadronMultiplicity()", int, doc="number of neutral hadrons in the jet"),
+         nMuons = Var("muonMultiplicity()", int, doc="number of muons in the jet"),
+         nElectrons = Var("electronMultiplicity()", int, doc="number of electrons in the jet"),
+         nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
+         nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
+      ),
+)
+
+# Scouting CHS MET Reclustered
+scoutingRawCHSMETRecluster = cms.EDProducer("PFMETProducer",
+    src = cms.InputTag("scoutingPFCHSCandidate"),
+    applyWeight = cms.bool(False),
+)
+
+scoutingRawCHSMETReclusterTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src  = cms.InputTag("scoutingRawCHSMETRecluster"),
+    name = cms.string("ScoutingRawCHSMETRecluster"),
+    doc = cms.string("MET from reclustering scouting PF candidates with CHS applied"),
+    singleton = cms.bool(True),
+    variables = cms.PSet(PTVars,
+        sumEt = Var("sumEt()", float, doc="scalar sum of Et", precision=10),
+    )
 )
 
 ak4ScoutingJetParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProducer",
@@ -421,39 +535,6 @@ ak4ScoutingJetParticleNetJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer
       model_path = cms.FileInPath("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK4/V00/particle-net.onnx"),
       flav_names = cms.vstring(["probb", "probbb","probc", "probcc", "probuds", "probg", "probundef"]),
       debugMode = cms.untracked.bool(False),
-)
-
-ak4ScoutingJetTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
-      src = cms.InputTag("ak4ScoutingJets"),
-      name = cms.string("ScoutingJet"),
-      cut = cms.string(""),
-      doc = cms.string("ScoutingJet"),
-      singleton = cms.bool(False),
-      extension = cms.bool(False), # this is the main table
-      externalVariables = cms.PSet(
-         particleNet_prob_b = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probb'), float, doc="ParticleNet probability of b", precision=10),
-         particleNet_prob_bb = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probbb'), float, doc="ParticleNet probability of bb", precision=10),
-         particleNet_prob_c = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probc'), float, doc="ParticleNet probability of c", precision=10),
-         particleNet_prob_cc = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probcc'), float, doc="ParticleNet probability of cc", precision=10),
-         particlenet_prob_uds = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probuds'), float, doc="particlenet probability of uds", precision=10),
-         particleNet_prob_g = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probg'), float, doc="ParticleNet probability of g", precision=10),
-         particleNet_prob_undef = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probundef'), float, doc="ParticleNet probability of undef", precision=10),
-      ),
-      variables = cms.PSet(
-         P4Vars,
-         area = Var("jetArea()", float, doc="jet catchment area, for JECs",precision=10),
-         chHEF = Var("chargedHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Hadron Energy Fraction", precision= 6),
-         neHEF = Var("neutralHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Hadron Energy Fraction", precision= 6),
-         chEmEF = Var("(electronEnergy()+muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Electromagnetic Energy Fraction", precision= 6),
-         neEmEF = Var("(photonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Electromagnetic Energy Fraction", precision= 6),
-         muEF = Var("(muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="muon Energy Fraction", precision= 6),
-         nCh = Var("chargedHadronMultiplicity()", int, doc="number of charged hadrons in the jet"),
-         nNh = Var("neutralHadronMultiplicity()", int, doc="number of neutral hadrons in the jet"),
-         nMuons = Var("muonMultiplicity()", int, doc="number of muons in the jet"),
-         nElectrons = Var("electronMultiplicity()", int, doc="number of electrons in the jet"),
-         nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
-         nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
-      ),
 )
 
 ak4ScoutingJetMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
