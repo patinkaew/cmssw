@@ -20,16 +20,48 @@ patTriggerScouting = patTrigger.clone(l1tAlgBlkInputTag="gtStage2DigisScouting",
 selectedPatTriggerScouting = selectedPatTrigger.clone(src="patTriggerScouting")
 slimmedPatTriggerScouting = slimmedPatTrigger.clone(src="selectedPatTriggerScouting")
 unpackedPatTriggerScouting = unpackedPatTrigger.clone(patTriggerObjectsStandAlone="slimmedPatTriggerScouting")
-triggerObjectTableScouting = triggerObjectTable.clone(src="unpackedPatTriggerScouting")
+triggerObjectScoutingTable = triggerObjectTable.clone(
+    src="unpackedPatTriggerScouting",
+    l1EG = cms.InputTag("gtStage2DigisScouting","EGamma"),
+    l1Sum = cms.InputTag("gtStage2DigisScouting","EtSum"),
+    l1Jet = cms.InputTag("gtStage2DigisScouting","Jet"),
+    l1Muon = cms.InputTag("gtStage2DigisScouting","Muon"),
+    l1Tau = cms.InputTag("gtStage2DigisScouting","Tau"),)
 
-triggerTask = cms.Task(gtStage2DigisScouting,unpackedPatTriggerScouting,triggerObjectTableScouting,l1bitsScouting)
+from PhysicsTools.NanoAOD.l1trig_cff import *
+l1MuScoutingTable = l1MuTable.clone(src=cms.InputTag("gtStage2DigisScouting","Muon"))
+l1JetScoutingTable = l1JetTable.clone(src=cms.InputTag("gtStage2DigisScouting","Jet"))
+l1EGScoutingTable = l1EGTable.clone(src=cms.InputTag("gtStage2DigisScouting","EGamma"))
+l1TauScoutingTable = l1TauTable.clone(src=cms.InputTag("gtStage2DigisScouting","Tau"))
+l1EtSumScoutingTable = l1EtSumTable.clone(src=cms.InputTag("gtStage2DigisScouting","EtSum"))
+
+#reduce the variables to the core variables as only these are available in gtStage2Digis
+l1EGScoutingTable.variables = cms.PSet(l1EGReducedVars)
+l1MuScoutingTable.variables = cms.PSet(l1MuonReducedVars)
+l1JetScoutingTable.variables = cms.PSet(l1JetReducedVars)
+l1TauScoutingTable.variables = cms.PSet(l1TauReducedVars)
+l1EtSumScoutingTable.variables = cms.PSet(l1EtSumReducedVars)
+
+#triggerTask = cms.Task(gtStage2DigisScouting,unpackedPatTriggerScouting,triggerObjectTableScouting,l1bitsScouting)
+triggerTask = cms.Task(
+    gtStage2DigisScouting, l1MuScoutingTable, l1EGScoutingTable, l1TauScoutingTable, l1JetScoutingTable, l1EtSumScoutingTable, 
+    unpackedPatTriggerScouting,l1bitsScouting,#triggerObjectScoutingTable,
+)
 triggerSequence = cms.Sequence(L1TRawToDigi+patTriggerScouting+selectedPatTriggerScouting+slimmedPatTriggerScouting+cms.Sequence(triggerTask))
 
 # MC tasks
 genJetTask = cms.Task(ak4ScoutingJetMatchGen,ak4ScoutingJetExtTable,ak8ScoutingJetMatchGen,ak8ScoutingJetExtTable)
 puTask = cms.Task(puTable)
 
-nanoTableTaskCommon = cms.Task(photonScoutingTable,muonScoutingTable,electronScoutingTable,trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,rhoScoutingTable,metScoutingTable,particleTask,particleTableTask,ak4JetTableTask,ak8JetTableTask)
+# experimental
+scoutingReclusteredRawPFMETTableTask = cms.Task(scoutingReclusteredRawPFMET, scoutingReclusteredRawPFMETTable)
+scoutingReclusteredJetCHSTableTask = cms.Task(scoutingPFCHSCands, scoutingReclusteredJetCHS, scoutingReclusteredJetCHSTable)
+scoutingReclusteredRawCHSMETTableTask = cms.Task(scoutingReclusteredRawCHSMET, scoutingReclusteredRawCHSMETTable)
+experimentalTask = cms.Task(particleOriScoutingTable,jetScoutingTable,scoutingReclusteredRawPFMETTableTask,scoutingReclusteredJetCHSTableTask,scoutingReclusteredRawCHSMETTableTask,particleCHSScoutingTable)
+
+nanoTableTaskCommon = cms.Task(photonScoutingTable,muonScoutingArrayTable,muonScoutingTable,muonScoutingNoVtxArrayTable,muonScoutingNoVtxTable,electronScoutingArrayTable,electronScoutingTable,trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,displacedvertexNoVtxScoutingTable,rhoScoutingTable,metScoutingTable,particleTask,particleTableTask,ak4JetTableTask,ak8JetTableTask,experimentalTask)
+
+#nanoTableTaskCommon = cms.Task(photonScoutingTable,muonScoutingArrayTable,muonScoutingTable,electronScoutingTable,trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,rhoScoutingTable,metScoutingTable,particleTask,particleTableTask,ak4JetTableTask,ak8JetTableTask)
 
 nanoSequenceCommon = cms.Sequence(triggerSequence,nanoTableTaskCommon)
 
