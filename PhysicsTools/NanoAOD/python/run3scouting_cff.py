@@ -2,65 +2,24 @@ import FWCore.ParameterSet.Config as cms
 from  PhysicsTools.NanoAOD.common_cff import *
 from PhysicsTools.NanoAOD.simpleCandidateFlatTableProducer_cfi import simpleCandidateFlatTableProducer
 
-################
-# Scouting photons, electrons, muons, tracks, primary vertices, displaced vertices, rho and MET
+#####################################
+##### Scouting Original Objects #####
+#####################################
+# this section describes flat tables "dump" faithfully from Run3Scouting* formats
 
-photonScoutingTable = cms.EDProducer("SimpleRun3ScoutingPhotonFlatTableProducer",
-     src = cms.InputTag("hltScoutingEgammaPacker"),
-     cut = cms.string(""),
-     name = cms.string("ScoutingPhoton"),
-     doc  = cms.string("Photon scouting information"),
-     singleton = cms.bool(False),
-     extension = cms.bool(False),
-     variables = cms.PSet(
-         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
-         eta = Var('eta', 'float', precision=10, doc='SC eta'),
-         phi = Var('phi', 'float', precision=10, doc='SC phi'),
-         m = Var('m', 'float', precision=10, doc='SC mass'),
-         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
-         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
-         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
-         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
-         r9 = Var('r9', 'float', precision=10, doc='Photon SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
-         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
-         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
-         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
-     )
+
+# Scouting Muon
+scoutingMuonArrayTable = cms.EDProducer("Run3ScoutingMuonArrayTableProducer",
+    src = cms.InputTag("hltScoutingMuonPackerVtx"),
+    vertex_index_collection_name = cms.string("ScoutingMuonVtxVertexIndex"),
+    hit_pattern_collection_name = cms.string("ScoutingMuonVtxTrackHitPattern"),
 )
 
-electronScoutingTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProducer",
-     src = cms.InputTag("hltScoutingEgammaPacker"),
-     cut = cms.string(""),
-     name = cms.string("ScoutingElectron"),
-     doc  = cms.string("Electron scouting information"),
-     singleton = cms.bool(False),
-     extension = cms.bool(False),
-     variables = cms.PSet(
-         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
-         eta = Var('eta', 'float', precision=10, doc='SC eta'),
-         phi = Var('phi', 'float', precision=10, doc='SC phi'),
-         m = Var('m', 'float', precision=10, doc='SC mass'),
-         dEtaIn = Var('dEtaIn', 'float', precision=10, doc='#Delta#eta(SC seed, track pixel seed)'),
-         dPhiIn = Var('dPhiIn', 'float', precision=10, doc='#Delta#phi(SC seed, track pixel seed)'),
-         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
-         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
-         ooEMOop = Var('ooEMOop', 'float', precision=10, doc='1/E(SC) - 1/p(track momentum)'),
-         missingHits = Var('missingHits', 'int', doc='missing hits in the tracker'),
-         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
-         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
-         trackIso = Var('trackIso', 'float', precision=10, doc='Isolation of electron track in the tracker'),
-         r9 = Var('r9', 'float', precision=10, doc='ELectron SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
-         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
-         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
-         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
-     )
-)
-
-muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
+scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
      src = cms.InputTag("hltScoutingMuonPacker"),
      cut = cms.string(""),
      name = cms.string("ScoutingMuon"),
-     doc  = cms.string("Muon scouting information"),
+     doc  = cms.string("scouting muon"),
      singleton = cms.bool(False),
      extension = cms.bool(False),
      variables = cms.PSet(
@@ -118,10 +77,112 @@ muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
          trk_vx = Var('trk_vx', 'float', precision=10, doc='track vx'),
          trk_vy = Var('trk_vy', 'float', precision=10, doc='track vy'),
          trk_vz = Var('trk_vz', 'float', precision=10, doc='track vz'),
+
+         # additional parameters for array fields
+         nVertex = Var('vtxIndx().size()', "uint", doc="number of associated vertices"),
+         trk_hitPattern_hitCount = Var('trk_hitPattern().hitCount', 'uint8', doc='number of associated vertices'),
+         trk_hitPattern_beginTrackHits = Var('trk_hitPattern().beginTrackHits', "uint8", doc="track hit pattern begin track hit"),
+         trk_hitPattern_endTrackHits = Var('trk_hitPattern().endTrackHits', "uint8", doc="track hit pattern end track hit"),
+         trk_hitPattern_beginInner = Var('trk_hitPattern().beginInner', "uint8", doc="track hit pattern begin inner"),
+         trk_hitPattern_endInner = Var('trk_hitPattern().endInner', "uint8", doc="track hit pattern end inner"),
+         trk_hitPattern_beginOuter = Var('trk_hitPattern().beginOuter', "uint8", doc="track hit pattern begin outer"),
+         trk_hitPattern_endOuter = Var('trk_hitPattern().endOuter', "uint8", doc="track hit pattern end outer"),
+         nTrackHitPattern = Var('trk_hitPattern().hitPattern.size()', "uint", doc="number of associated hit patterns"),
      )
 )
 
-trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
+# Scouting Displaced Vertex (Muon)
+
+scoutingDisplacedVertexTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
+     src = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingMuonDisplacedVertex"),
+     doc  = cms.string("Scouting DisplacedVertex information"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         x = Var('x', 'float', precision=10, doc='position x coordinate'),
+         y = Var('y', 'float', precision=10, doc='position y coordinate'),
+         z = Var('z', 'float', precision=10, doc='position z coordinate'),
+         xError = Var('xError', 'float', precision=10, doc='x error'),
+         yError = Var('yError', 'float', precision=10, doc='y error'),
+         zError = Var('zError', 'float', precision=10, doc='z error'),
+         tracksSize = Var('tracksSize', 'int', doc='number of tracks'),
+         chi2 = Var('chi2', 'float', precision=10, doc='chi squared'),
+         ndof = Var('ndof', 'int', doc='number of degrees of freedom'),
+         isValidVtx = Var('isValidVtx', 'bool', doc='is valid'),
+     )
+)
+
+# Scouting Electron
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingElectron.h
+
+scoutingElectronArrayTable = cms.EDProducer("Run3ScoutingElectronArrayTableProducer",
+    src = cms.InputTag("hltScoutingEgammaPacker"),
+    track_collection_name = cms.string("ScoutingElectronTrack"),
+)
+
+scoutingElectronTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProducer",
+     src = cms.InputTag("hltScoutingEgammaPacker"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingElectron"),
+     doc  = cms.string("Electron scouting information"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
+         eta = Var('eta', 'float', precision=10, doc='SC eta'),
+         phi = Var('phi', 'float', precision=10, doc='SC phi'),
+         m = Var('m', 'float', precision=10, doc='SC mass'),
+         dEtaIn = Var('dEtaIn', 'float', precision=10, doc='#Delta#eta(SC seed, track pixel seed)'),
+         dPhiIn = Var('dPhiIn', 'float', precision=10, doc='#Delta#phi(SC seed, track pixel seed)'),
+         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
+         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
+         ooEMOop = Var('ooEMOop', 'float', precision=10, doc='1/E(SC) - 1/p(track momentum)'),
+         missingHits = Var('missingHits', 'int', doc='missing hits in the tracker'),
+         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
+         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
+         trackIso = Var('trackIso', 'float', precision=10, doc='Isolation of electron track in the tracker'),
+         r9 = Var('r9', 'float', precision=10, doc='ELectron SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
+         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
+         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
+         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
+
+         # additional parameters for array fields
+         nTrack = Var('trkd0().size()', "uint", doc="number of associated tracks"),
+     )
+)
+
+# Scouting Photon
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingPhoton.h 
+
+scoutingPhotonTable = cms.EDProducer("SimpleRun3ScoutingPhotonFlatTableProducer",
+     src = cms.InputTag("hltScoutingEgammaPacker"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingPhoton"),
+     doc  = cms.string("Photon scouting information"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
+         eta = Var('eta', 'float', precision=10, doc='SC eta'),
+         phi = Var('phi', 'float', precision=10, doc='SC phi'),
+         m = Var('m', 'float', precision=10, doc='SC mass'),
+         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
+         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
+         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
+         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
+         r9 = Var('r9', 'float', precision=10, doc='Photon SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
+         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
+         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
+         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
+     )
+)
+
+# Scouting Tracks
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingTrack.h
+
+scoutingTrackTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
      src = cms.InputTag("hltScoutingTrackPacker"),
      cut = cms.string(""),
      name = cms.string("ScoutingTrack"),
@@ -166,7 +227,10 @@ trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
      )
 )
 
-primaryvertexScoutingTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
+# Scouting Primary Vertex
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingParticle.h 
+
+scoutingPrimaryVertexTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
      src = cms.InputTag("hltScoutingPrimaryVertexPacker", "primaryVtx"),
      cut = cms.string(""),
      name = cms.string("ScoutingPrimaryVertex"),
@@ -187,35 +251,74 @@ primaryvertexScoutingTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTablePr
      )
 )
 
-displacedvertexScoutingTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
-     src = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
+# Scouting Particle
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingParticle.h
+
+scoutingParticleTable = cms.EDProducer("SimpleRun3ScoutingParticleFlatTableProducer",
+    src = cms.InputTag("hltScoutingPFPacker"),
+    name = cms.string("ScoutingParticle"),
+    cut = cms.string(""),
+    doc = cms.string("ScoutingParticle"),
+    singleton = cms.bool(False),
+    extension = cms.bool(False), # this is the main table
+    variables = cms.PSet(
+        P3Vars,
+        pdgId = Var("pdgId", int, doc="PDG code assigned by the event reconstruction (not by MC truth)"),
+        vertex = Var("vertex()", int, doc="vertex index"),
+        normchi2 = Var("normchi2()", float, doc="normalized chi squared of best track"),
+        dz = Var("dz()", float, doc="dz of best track"),
+        dxy = Var("dxy()", float, doc="dxy of best track"),
+        dzsig = Var("dzsig()", float, doc="dzsig of best track"),
+        dxysig = Var("dxysig()", float, doc="dxysig of best track"),
+        lostInnerHits = Var("lostInnerHits()", "uint8", doc="lostInnerHits of best track"),
+        quality = Var("quality()", "uint8", doc="quality of best track"),
+        trk_pt = Var("trk_pt()", "float", doc="pt of best track"),
+        trk_eta = Var("trk_eta()", "float", doc="eta of best track"),
+        trk_phi = Var("trk_phi()", "float", doc="phi of best track"),
+        relative_trk_vars = Var("relative_trk_vars()", "bool", doc="relative_trk_vars"),
+    ),
+)
+
+
+# Scouting PFJet
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingPFJet.h
+
+scoutingPFJetTable = cms.EDProducer("SimpleRun3ScoutingPFJetFlatTableProducer",
+     src = cms.InputTag("hltScoutingPFPacker"),
      cut = cms.string(""),
-     name = cms.string("ScoutingDisplacedVertex"),
-     doc  = cms.string("DisplacedVertex scouting information"),
+     name = cms.string("ScoutingPFJet"),
+     doc  = cms.string("PFJet scouting information"),
      singleton = cms.bool(False),
      extension = cms.bool(False),
      variables = cms.PSet(
-         x = Var('x', 'float', precision=10, doc='position x coordinate'),
-         y = Var('y', 'float', precision=10, doc='position y coordinate'),
-         z = Var('z', 'float', precision=10, doc='position z coordinate'),
-         xError = Var('xError', 'float', precision=10, doc='x error'),
-         yError = Var('yError', 'float', precision=10, doc='y error'),
-         zError = Var('zError', 'float', precision=10, doc='z error'),
-         tracksSize = Var('tracksSize', 'int', doc='number of tracks'),
-         chi2 = Var('chi2', 'float', precision=10, doc='chi squared'),
-         ndof = Var('ndof', 'int', doc='number of degrees of freedom'),
-         isValidVtx = Var('isValidVtx', 'bool', doc='is valid'),
+         P3Vars,
+         #pt = Var('pt', 'float', precision=10, doc='TODO'),
+         #eta = Var('eta', 'float', precision=10, doc='TODO'),
+         #phi = Var('phi', 'float', precision=10, doc='TODO'),
+         m = Var('m', 'float', precision=10, doc='mass'),
+         jetArea = Var('jetArea', 'float', precision=10, doc='jet area'),
+         chargedHadronEnergy = Var('chargedHadronEnergy', 'float', precision=10, doc='TODO'),
+         neutralHadronEnergy = Var('neutralHadronEnergy', 'float', precision=10, doc='TODO'),
+         photonEnergy = Var('photonEnergy', 'float', precision=10, doc='TODO'),
+         electronEnergy = Var('electronEnergy', 'float', precision=10, doc='TODO'),
+         muonEnergy = Var('muonEnergy', 'float', precision=10, doc='TODO'),
+         HFHadronEnergy = Var('HFHadronEnergy', 'float', precision=10, doc='TODO'),
+         HFEMEnergy = Var('HFEMEnergy', 'float', precision=10, doc='TODO'),
+         chargedHadronMultiplicity = Var('chargedHadronMultiplicity', 'int', doc='TODO'),
+         neutralHadronMultiplicity = Var('neutralHadronMultiplicity', 'int', doc='TODO'),
+         photonMultiplicity = Var('photonMultiplicity', 'int', doc='TODO'),
+         electronMultiplicity = Var('electronMultiplicity', 'int', doc='TODO'),
+         muonMultiplicity = Var('muonMultiplicity', 'int', doc='TODO'),
+         HFHadronMultiplicity = Var('HFHadronMultiplicity', 'int', doc='TODO'),
+         HFEMMultiplicity = Var('HFEMMultiplicity', 'int', doc='TODO'),
+         HOEnergy = Var('HOEnergy', 'float', precision=10, doc='TODO'),
+         csv = Var('csv', 'float', precision=10, doc='TODO'),
      )
 )
 
-rhoScoutingTable = cms.EDProducer("GlobalVariablesTableProducer",
-    name = cms.string(""),
-    variables = cms.PSet(
-        ScoutingRho = ExtVar( cms.InputTag("hltScoutingPFPacker", "rho"), "double", doc = "rho from all scouting PF Candidates, used e.g. for JECs" ),
-    )
-)
+# Scouting MET
 
-metScoutingTable = cms.EDProducer("GlobalVariablesTableProducer",
+scoutingMETTable = cms.EDProducer("GlobalVariablesTableProducer",
     name = cms.string("ScoutingMET"),
     variables = cms.PSet(
         pt = ExtVar( cms.InputTag("hltScoutingPFPacker", "pfMetPt"), "double", doc = "scouting MET pt"),
@@ -223,8 +326,22 @@ metScoutingTable = cms.EDProducer("GlobalVariablesTableProducer",
     )
 )
 
-################
-# Scouting particles
+# Scouting Rho
+
+scoutingRhoTable = cms.EDProducer("GlobalVariablesTableProducer",
+    name = cms.string(""),
+    variables = cms.PSet(
+        ScoutingRho = ExtVar( cms.InputTag("hltScoutingPFPacker", "rho"), "double", doc = "rho from all scouting PF Candidates, used e.g. for JECs" ),
+    )
+)
+
+####################################
+##### Scouting Derived Objects #####
+####################################
+
+# Scouting PF Candidates
+# translation from Run3ScoutingParticle to reco::PFCandidate
+# used as input for standard algorithm, e.g. jet clustering
 
 scoutingPFCands = cms.EDProducer(
      "Run3ScoutingParticleToRecoPFCandidateProducer",
@@ -256,8 +373,8 @@ particleScoutingTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
     ),
   )
 
-################
-# Scouting AK4 jets
+# Scouting Jet Reclustered
+# jets from reclustering PF candidates
 
 from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
 ak4ScoutingJets = ak4PFJets.clone(
