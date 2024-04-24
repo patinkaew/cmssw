@@ -7,12 +7,45 @@ from EventFilter.L1TRawToDigi.gtStage2Digis_cfi import gtStage2Digis
 from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import patTrigger
 from PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi import selectedPatTrigger
 from PhysicsTools.PatAlgos.slimming.slimmedPatTrigger_cfi import slimmedPatTrigger
+import os
 
 # common tasks
 particleTask = cms.Task(scoutingPFCands)
 particleTableTask = cms.Task(particleScoutingTable)
 ak4JetTableTask = cms.Task(ak4ScoutingJets,ak4ScoutingJetParticleNetJetTagInfos,ak4ScoutingJetParticleNetJetTags,ak4ScoutingJetTable)
 ak8JetTableTask = cms.Task(ak8ScoutingJets,ak8ScoutingJetsSoftDrop,ak8ScoutingJetsSoftDropMass,ak8ScoutingJetEcfNbeta1,ak8ScoutingJetNjettiness,ak8ScoutingJetParticleNetJetTagInfos,ak8ScoutingJetParticleNetJetTags,ak8ScoutingJetParticleNetMassRegressionJetTags,ak8ScoutingJetTable)
+
+# from 2024, there are two muon collections: Vtx and NoVtx
+cmssw_major_version = int(os.environ["CMSSW_VERSION"].split("_")[1])
+muonScoutingTableTask = cms.Task(muonScoutingTable)
+displacedvertexScoutingTableTask = cms.Task(displacedvertexScoutingTable)
+if (cmssw_major_version >= 14): # if CMSSW_VERSION is higher or equal to 14, need to make two muon collections
+    # muonVtx
+    muonVtxScoutingTable = muonScoutingTable.clone(
+        src = cms.InputTag("hltScoutingMuonPackerVtx"),
+        name = cms.string("ScoutingMuonVtx"),
+        doc  = cms.string("Scouting Muon Vtx information"),
+    )
+    displacedvertexVtxScoutingTable = displacedvertexScoutingTable.clone(
+        src = cms.InputTag("hltScoutingMuonPackerVtx", "displacedVtx"),
+        name = cms.string("ScoutingMuonVtxDisplacedVertex"),
+        doc  = cms.string("Scouting Muon Vtx DisplacedVertex information"),
+    )
+
+    # muonNoVtx
+    muonNoVtxScoutingTable = muonScoutingTable.clone(
+        src = cms.InputTag("hltScoutingMuonPackerNoVtx"),
+        name = cms.string("ScoutingMuonNoVtx"),
+        doc  = cms.string("Scouting Muon NoVtx information"),
+    )
+    displacedvertexNoVtxScoutingTable = displacedvertexScoutingTable.clone(
+        src = cms.InputTag("hltScoutingMuonPackerNoVtx", "displacedVtx"),
+        name = cms.string("ScoutingMuonNoVtxDisplacedVertex"),
+        doc  = cms.string("Scouting Muon NoVtx DisplacedVertex information"),
+    )
+
+    muonScoutingTableTask = cms.Task(muonVtxScoutingTable, muonNoVtxScoutingTable)
+    displacedvertexScoutingTableTask = cms.Task(displacedvertexVtxScoutingTable, displacedvertexNoVtxScoutingTable)
 
 ## L1 decisions
 gtStage2DigisScouting = gtStage2Digis.clone(InputLabel="hltFEDSelectorL1")
@@ -49,7 +82,7 @@ triggerSequence = cms.Sequence(L1TRawToDigi+patTriggerScouting+selectedPatTrigge
 genJetTask = cms.Task(ak4ScoutingJetMatchGen,ak4ScoutingJetExtTable,ak8ScoutingJetMatchGen,ak8ScoutingJetExtTable)
 puTask = cms.Task(puTable)
 
-nanoTableTaskCommon = cms.Task(photonScoutingTable,muonScoutingTable,electronScoutingTable,trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTable,rhoScoutingTable,metScoutingTable,particleTask,particleTableTask,ak4JetTableTask,ak8JetTableTask)
+nanoTableTaskCommon = cms.Task(photonScoutingTable,muonScoutingTableTask,electronScoutingTable,trackScoutingTable,primaryvertexScoutingTable,displacedvertexScoutingTableTask,rhoScoutingTable,metScoutingTable,particleTask,particleTableTask,ak4JetTableTask,ak8JetTableTask)
 
 nanoSequenceCommon = cms.Sequence(triggerSequence,nanoTableTaskCommon)
 
