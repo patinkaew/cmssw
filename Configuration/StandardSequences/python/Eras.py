@@ -46,6 +46,7 @@ class Eras (object):
                  'Run3_2023_FastSim',
                  'Run3_2023_ZDC',
                  'Run3_2023_UPC',
+                 'Run3_post2023',
                  'Phase2',
                  'Phase2C9',
                  'Phase2C10',
