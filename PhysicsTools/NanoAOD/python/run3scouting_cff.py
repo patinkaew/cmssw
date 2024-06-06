@@ -7,7 +7,6 @@ from PhysicsTools.NanoAOD.simpleCandidateFlatTableProducer_cfi import simpleCand
 #####################################
 # this section describes flat tables "dump" faithfully from Run3Scouting* formats
 
-
 # Scouting Muon
 scoutingMuonArrayTable = cms.EDProducer("Run3ScoutingMuonArrayTableProducer",
     src = cms.InputTag("hltScoutingMuonPackerVtx"),
@@ -93,7 +92,7 @@ scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
 
 # Scouting Displaced Vertex (Muon)
 
-scoutingDisplacedVertexTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
+scoutingMuonDisplacedVertexTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
      src = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
      cut = cms.string(""),
      name = cms.string("ScoutingMuonDisplacedVertex"),
@@ -627,7 +626,7 @@ ak8ScoutingJetParticleNetJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer
       src = cms.InputTag("ak8ScoutingJetParticleNetJetTagInfos"),
       preprocess_json = cms.string("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/General/V00/preprocess.json"),
       model_path = cms.FileInPath("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/General/V00/particle-net.onnx"),
-      flav_names = cms.vstring(["probHbb", "probHcc","probHqq", "probQCDall"]),
+      flav_names = cms.vstring(["probQCD", "probHbb","probHcc", "probHqq"]),
       debugMode = cms.untracked.bool(False),
   )
 
@@ -678,14 +677,14 @@ ak8ScoutingJetTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
          nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
          nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
       ),
-  )
+)
 
 ak8ScoutingJetMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
       src = cms.InputTag("ak8ScoutingJets"),
       matched = cms.InputTag("slimmedGenJetsAK8"),
       distMax = cms.double(0.8),
       value = cms.string("index"),
-  )
+)
 
 ak8ScoutingJetExtTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
       src = cms.InputTag("ak8ScoutingJets"),
@@ -697,4 +696,11 @@ ak8ScoutingJetExtTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
          genJetAK8Idx = ExtVar(cms.InputTag("ak8ScoutingJetMatchGen"), int, doc="gen jet idx"),
       ),
       variables = cms.PSet(),
-  )
+)
+
+#############################
+##### Task definitions ######
+#############################
+
+# base scouting tables task
+scoutingTablesTask = cms.Task()
