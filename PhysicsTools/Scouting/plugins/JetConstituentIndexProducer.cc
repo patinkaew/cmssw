@@ -30,12 +30,12 @@ JetConstituentIndexProducer<T>::JetConstituentIndexProducer(const edm::Parameter
   : jet_token_(consumes<edm::View<T>>(iConfig.getParameter<edm::InputTag>("jets"))),
     candidate_token_(consumes<reco::CandidateView>(iConfig.getParameter<edm::InputTag>("candidates"))) {
 
- produces<std::vector<int>>(); // candidate indices
+ produces<std::vector<std::vector<int>>>(); // jet-candidate indices
 }
 
 template <typename T>
-void JetContituentIndexProducer<T>::produce(edm::Event &iEvent, const edm::EventSetp &iSetup) {
-  auto jet_constituent_indices = std::make_unique<std::vector<int>>();
+void JetConstituentIndexProducer<T>::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
+  auto jet_constituent_index_collection = std::make_unique<std::vector<std::vector<int>>>();
   auto jet_handle = iEvent.getHandle(jet_token_);
 
   edm::Handle<reco::CandidateView> candidate_handle;
@@ -44,17 +44,20 @@ void JetContituentIndexProducer<T>::produce(edm::Event &iEvent, const edm::Event
   for (size_t i_jet = 0; i_jet < jet_handle->size(); ++i_jet){
     const auto &jet = jet_handle->at(i_jet);
     
-    std::vector<reco::CandidatePtr> const & daugthers = jet.daughterPtrVector();
+    std::vector<reco::CandidatePtr> const & daughters = jet.daughterPtrVector();
+    std::vector<int> jet_constituent_index;
 
     for (const auto &cand : daughters) {
       auto candPtrs = candidate_handle->ptrs();
       auto candInNewList = std::find(candPtrs.begin(), candPtrs.end(), cand);
-      if (candInNexList == candPtrs.end()) continue; // not found
-      jet_constituent_indices->push_back(candInNewList - candPtrs.begin());
+      if (candInNewList == candPtrs.end()) continue; // not found
+      jet_constituent_index.push_back(candInNewList - candPtrs.begin());
     }
+
+    jet_constituent_index_collection->push_back(jet_constituent_index);
   }
 
-  iEvent.put(std::move(jet_constituent_indices));
+  iEvent.put(std::move(jet_constituent_index_collection));
 }
 
 template <typename T>
