@@ -856,3 +856,400 @@ protected:
   const unsigned int maxLen_;
   const StringCutObjectSelector<T> cut_;
 };
+
+// Flatten array-variable
+template <typename ObjType>
+class VariableArray : public VariableBase {
+public:
+  VariableArray(const std::string &aname, const edm::ParameterSet &cfg) : VariableBase(aname, cfg) {}
+  virtual void fill(std::vector<const ObjType *> &selobjs, nanoaod::FlatTable &out,
+                    std::vector<unsigned int>* counts,
+                    std::vector<unsigned int>* offsets,
+                    const std::string &index_name, const std::string &index_doc) const = 0;
+};
+
+template <typename ObjType, typename StringFunctor, typename ValType>
+class FuncVariableArray : public VariableArray<ObjType> {
+public:
+  FuncVariableArray(const std::string &aname, const edm::ParameterSet &cfg)
+      : VariableArray<ObjType>(aname, cfg),
+        func_(cfg.getParameter<std::string>("expr"), cfg.getUntrackedParameter<bool>("lazyEval")),
+        precisionFunc_(cfg.existsAs<std::string>("precision") ? cfg.getParameter<std::string>("precision") : "23",
+                       cfg.getUntrackedParameter<bool>("lazyEval")) {}
+  ~FuncVariableArray() override {}
+
+  void fill(std::vector<const ObjType *> &selobjs, nanoaod::FlatTable &out,
+            std::vector<unsigned int>* counts,
+            std::vector<unsigned int>* offsets,
+            const std::string &index_name, const std::string &index_doc) const override {
+
+    std::vector<ValType> vals;
+    ValType val; // temporary object
+    unsigned int offset = 0;
+    std::vector<unsigned int> indices;
+    for (unsigned int i = 0, n = selobjs.size(); i < n; ++i) {
+      auto arr = func_(*selobjs[i]);
+      for (const auto& elem : arr){
+        val = elem;
+        if constexpr (std::is_same<ValType, float>()) {
+          if (this->precision_ == -2) {
+            auto prec = precisionFunc_(elem);
+            if (prec > 0) {
+              val = MiniFloatConverter::reduceMantissaToNbitsRounding(val, prec);
+            }
+          }
+        }
+        vals.push_back(val);
+
+        if (!index_name.empty())
+          indices.push_back(i);
+      }
+
+      if (counts)
+        counts->push_back(arr.size());
+      if (offsets) {
+        offsets->push_back(offset);
+        offset += arr.size();
+      }
+
+    }
+    out.template addColumn<ValType>(this->name_, vals, this->doc_, this->precision_);
+    
+    if (!index_name.empty())
+      out.addColumn<unsigned int>(index_name, indices, index_doc, -1);
+  }
+
+protected:
+  StringFunctor func_;
+  StringFunctor precisionFunc_;
+};
+
+template <typename ObjType>
+class ExtVariableArray : public VariableBase {
+public:
+  ExtVariableArray(const std::string &aname, const edm::ParameterSet &cfg) : VariableBase(aname, cfg) {}
+  virtual void fill(const edm::Event &iEvent,
+                    std::vector<edm::Ptr<ObjType>> selptrs,
+                    nanoaod::FlatTable &out,
+                    std::vector<unsigned int>* counts,
+                    std::vector<unsigned int>* offsets,
+                    const std::string &index_name, const std::string &index_doc) const = 0;
+};
+
+template <typename ObjType, typename TIn, typename ValType = TIn>
+class ValueMapVariableArrayBase : public ExtVariableArray<ObjType> {
+public:
+  ValueMapVariableArrayBase(const std::string &aname,
+                            const edm::ParameterSet &cfg,
+                            edm::ConsumesCollector &&cc,
+                            bool skipNonExistingSrc = false)
+      : ExtVariableArray<ObjType>(aname, cfg),
+        skipNonExistingSrc_(skipNonExistingSrc),
+        token_(cc.consumes<edm::ValueMap<TIn>>(cfg.getParameter<edm::InputTag>("src"))) {}
+  virtual ValType eval(const edm::Handle<edm::ValueMap<TIn>> &vmap, const edm::Ptr<ObjType> &op) const = 0;
+  void fill(const edm::Event &iEvent, std::vector<edm::Ptr<ObjType>> selptrs, nanoaod::FlatTable &out,
+            std::vector<unsigned int>* counts,
+            std::vector<unsigned int>* offsets,
+            const std::string &index_name, const std::string &index_doc) const override {
+    edm::Handle<edm::ValueMap<TIn>> vmap;
+    iEvent.getByToken(token_, vmap);
+    std::vector<ValType> vals;
+    unsigned int offset = 0;
+    std::vector<unsigned int> indices;
+
+    if (vmap.isValid() || !skipNonExistingSrc_) {
+      for (unsigned int i = 0, n = selptrs.size(); i < n; ++i) {
+        // calls the overloaded method to either get the valuemap value directly, or a function of the object value.
+        auto arr = this->eval(vmap, selptrs[i]);
+        for (const auto& elem : arr){
+          vals.push_back(elem);
+          if (!index_name.empty())
+            indices.push_bacK(i);
+      }
+      if (counts)
+        counts.push_back(arr.size());
+      if (offsets){
+        offsets.push_back(offset);
+        offset += arr.size();
+      }
+    }
+    out.template addColumn<ValType>(this->name_, vals, this->doc_, this->precision_);
+
+    if (!index_name.empty())
+      out.addColumn<unsigned int>(index_name, indices, index_doc, -1);
+  }
+
+protected:
+  const bool skipNonExistingSrc_;
+  edm::EDGetTokenT<edm::ValueMap<TIn>> token_;
+};
+
+template <typename ObjType, typename TIn, typename ValType = TIn>
+class ValueMapVariableArray : public ValueMapVariableArrayBase<ObjType, TIn, ValType> {
+public:
+  ValueMapVariableArray(const std::string &aname,
+                        const edm::ParameterSet &cfg,
+                        edm::ConsumesCollector &&cc,
+                        bool skipNonExistingSrc = false)
+      : ValueMapVariableArrayBase<ObjType, TIn, ValType>(aname, cfg, std::move(cc), skipNonExistingSrc) {}
+  ValType eval(const edm::Handle<edm::ValueMap<TIn>> &vmap, const edm::Ptr<ObjType> &op) const override {
+    ValType val = (*vmap)[op];
+    return val;
+  }
+};
+
+template <typename T, typename TProd>
+class SimpleArrayFlatTableProducerBase : public edm::stream::EDProducer<> {
+public:
+  SimpleArrayFlatTableProducerBase(edm::ParameterSet const &params)
+      : name_(params.getParameter<std::string>("name")),
+        doc_(params.getParameter<std::string>("doc")),
+        extension_(params.getParameter<bool>("extension")),
+        skipNonExistingSrc_(params.getParameter<bool>("skipNonExistingSrc")),
+        src_(consumes<TProd>(params.getParameter<edm::InputTag>("src"))),
+        useCount_(params.getParameter<bool>("useCount")),
+        useOffset_(params.getParameter<bool>("useOffset")),
+        indexName_(params.getParameter<std::string>("indexName")) 
+        indexDoc_(params.getParameter<std::string>("indexDoc")) {
+    edm::ParameterSet const &varsPSet = params.getParameter<edm::ParameterSet>("variables");
+    for (const std::string &vname : varsPSet.getParameterNamesForType<edm::ParameterSet>()) {
+      const auto &varPSet = varsPSet.getParameter<edm::ParameterSet>(vname);
+      const std::string &type = varPSet.getParameter<std::string>("type");
+      if (type == "int")
+        vars_.push_back(std::make_unique<IntVarArr>(vname, varPSet));
+      else if (type == "uint")
+        vars_.push_back(std::make_unique<UIntVarArr>(vname, varPSet));
+      else if (type == "float")
+        vars_.push_back(std::make_unique<FloatVarArr>(vname, varPSet));
+      else if (type == "double")
+        vars_.push_back(std::make_unique<DoubleVarArr>(vname, varPSet));
+      else if (type == "uint8")
+        vars_.push_back(std::make_unique<UInt8VarArr>(vname, varPSet));
+      else if (type == "int16")
+        vars_.push_back(std::make_unique<Int16VarArr>(vname, varPSet));
+      else if (type == "uint16")
+        vars_.push_back(std::make_unique<UInt16VarArr>(vname, varPSet));
+      else if (type == "bool")
+        vars_.push_back(std::make_unique<BoolVarArr>(vname, varPSet));
+      else
+        throw cms::Exception("Configuration", "unsupported type " + type + " for variable " + vname);
+    }
+
+    produces<nanoaod::FlatTable>(); // flat table
+
+    if (useCount_)
+      produces<edm::ValueMap<unsigned int>>("count");
+    if (useOffset_)
+      produces<edm::ValueMap<unsigned int>>("offset");
+  }
+
+  ~SimpleArrayFlatTableProducerBase() override {};
+
+  static void addDescriptions(edm::ParameterSetDescription &desc) { // additional from SimpleFlatTableProducerBase::baseDescription
+    desc.add("useCount", false)->setComment("whether to produce a ValueMap containing counts");
+    desc.add("useOffset", false)->setComment("whether to produce a ValueMap containing offsets");
+    desc.add("indexName", std::string(""))
+      ->setComment("if not empty, produce a field containing indices of the objects in the main table and use this as the name of the field"); // PFNano style
+    desc.add("indexDoc", std::string(""))
+      ->setComment("if indexName is not empty, use as documentation of the field containing indices of the objects in the main table");
+  }
+
+  static void fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+    edm::ParameterSetDescription desc = SimpleFlatTableProducerBase<T, TProd>::baseDescriptions();
+    addDescriptions(desc);
+    descriptions.addWithDefaultLabel(desc);
+  }
+
+  // this is to be overriden by the child class
+  virtual std::unique_ptr<nanoaod::FlatTable> fillTable(const edm::Event &iEvent,
+                                                        const edm::Handle<TProd> &prod) const = 0;
+
+  void produce(edm::Event &iEvent, const edm::EventSetup &iSetup) override {
+    edm::Handle<TProd> src;
+    iEvent.getByToken(src_, src);
+
+    std::unique_ptr<nanoaod::FlatTable> out = fillTable(iEvent, src);
+
+    out->setDoc(doc_);
+
+    iEvent.put(std::move(out));
+  }
+
+protected:
+  const std::string name_;
+  const std::string doc_;
+  const bool extension_;
+  const bool skipNonExistingSrc_;
+  const edm::EDGetTokenT<TProd> src_;
+
+  typedef FuncVariableArray<T, StringObjectFunction<T>, int32_t> IntVarArr;
+  typedef FuncVariableArray<T, StringObjectFunction<T>, uint32_t> UIntVarArr;
+  typedef FuncVariableArray<T, StringObjectFunction<T>, float> FloatVarArr;
+  typedef FuncVariableArray<T, StringObjectFunction<T>, double> DoubleVarArr;
+  typedef FuncVariableArray<T, StringObjectFunction<T>, uint8_t> UInt8VarArr;
+  typedef FuncVariableArray<T, StringObjectFunction<T>, int16_t> Int16VarArr;
+  typedef FuncVariableArray<T, StringObjectFunction<T>, uint16_t> UInt16VarArr;
+  typedef FuncVariableArray<T, StringCutObjectSelector<T>, bool> BoolVarArr;
+  std::vector<std::unique_ptr<Variable<T>>> vars_;
+
+  bool useCount_;
+  bool useOffset_;
+  std::string indexName_;
+  std::string indexDoc_;
+};
+
+template <typename T>
+class SimpleArrayFlatTableProducer : public SimpleArrayFlatTableProducerBase<T, edm::View<T>> {
+public:
+  SimpleArrayFlatTableProducer(edm::ParameterSet const &params)
+      : SimpleArrayFlatTableProducerBase<T, edm::View<T>>(params),
+        singleton_(params.getParameter<bool>("singleton")),
+        maxLen_(params.existsAs<unsigned int>("maxLen") ? params.getParameter<unsigned int>("maxLen")
+                                                        : std::numeric_limits<unsigned int>::max()),
+        cut_(!singleton_ ? params.getParameter<std::string>("cut") : "",
+             !singleton_ ? params.getUntrackedParameter<bool>("lazyEval") : false) {
+    if (params.existsAs<edm::ParameterSet>("externalVariables")) {
+      edm::ParameterSet const &extvarsPSet = params.getParameter<edm::ParameterSet>("externalVariables");
+      for (const std::string &vname : extvarsPSet.getParameterNamesForType<edm::ParameterSet>()) {
+        const auto &varPSet = extvarsPSet.getParameter<edm::ParameterSet>(vname);
+        const std::string &type = varPSet.getParameter<std::string>("type");
+        if (type == "int")
+          extvars_.push_back(
+              std::make_unique<IntExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "uint")
+          extvars_.push_back(
+              std::make_unique<UIntExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "float")
+          extvars_.push_back(
+              std::make_unique<FloatExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "double")
+          extvars_.push_back(
+              std::make_unique<DoubleExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "uint8")
+          extvars_.push_back(
+              std::make_unique<UInt8ExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "int16")
+          extvars_.push_back(
+              std::make_unique<Int16ExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "uint16")
+          extvars_.push_back(
+              std::make_unique<UInt16ExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else if (type == "bool")
+          extvars_.push_back(
+              std::make_unique<BoolExtVarArr>(vname, varPSet, this->consumesCollector(), this->skipNonExistingSrc_));
+        else
+          throw cms::Exception("Configuration", "unsupported type " + type + " for variable " + vname);
+      }
+    }
+  }
+
+  ~SimpleArrayFlatTableProducer() override {}
+
+  static void fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+    edm::ParameterSetDescription desc = SimpleFlatTableProducer<T>::baseDescriptions();
+    SimpleArrayFlatTableProducerBase<T, edm::View<T>>::addDescriptions(desc);
+    descriptions.addWithDefaultLabel(desc);
+  }
+
+ std::unique_ptr<nanoaod::FlatTable> fillTable(const edm::Event &iEvent,
+                                                const edm::Handle<edm::View<T>> &prod) const override {
+    std::vector<const T *> selobjs;
+    std::vector<edm::Ptr<T>> selptrs;  // for external variables
+    if (prod.isValid() || !(this->skipNonExistingSrc_)) {
+      if (singleton_) {
+        assert(prod->size() == 1);
+        selobjs.push_back(&(*prod)[0]);
+        if (!extvars_.empty() || !typedextvars_.empty())
+          selptrs.emplace_back(prod->ptrAt(0));
+      } else {
+        for (unsigned int i = 0, n = prod->size(); i < n; ++i) {
+          const auto &obj = (*prod)[i];
+          if (cut_(obj)) {
+            selobjs.push_back(&obj);
+            if (!extvars_.empty() || !typedextvars_.empty())
+              selptrs.emplace_back(prod->ptrAt(i));
+          }
+          //if (selobjs.size() >= maxLen_)
+          //  break;
+        }
+      }
+    }
+    auto out = std::make_unique<nanoaod::FlatTable>(selobjs.size(), this->name_, singleton_, this->extension_);
+    std::vector<unsigned int> counts;
+    std::vector<unsigned int> offsets;
+    for (int i = 0, n = (this->vars_).size(); i < n; ++i){
+      if (i == 0){
+        if (useCount_) {
+          if (useOffset_){
+            var->fill(selobjs, *out, &counts, &offsets, indexName_, indexDoc_);
+          } else {
+            var->fill(selobjs, *out, &counts, nullptr, indexName_, indexDoc_);
+          }
+        } else {
+          if (useOffset_){
+            var->fill(selobjs, *out, nullptr, &offsets, indexName_, indexDoc_);
+          } else {
+            var->fill(selobjs, *out, nullptr, nullptr, indexName_, indexDoc_);
+          }
+        }
+      } else {
+        var->fill(selobjs, *out, nullptr, nullptr, "", "");
+      }
+    }
+    for (const auto &var : this->extvars_){
+      if (i == 0){
+        if (useCount_) {
+          if (useOffset_){
+            var->fill(iEvent, selptrs, *out, &counts, &offsets, indexName_, indexDoc_);
+          } else {
+            var->fill(iEvent, selptrs, *out, &counts, nullptr, indexName_, indexDoc_);
+          }
+        } else {
+          if (useOffset_){
+            var->fill(iEvent, selptrs, *out, nullptr, &offsets, indexName_, indexDoc_);
+          } else {
+            var->fill(iEvent, selptrs, *out, nullptr, nullptr, indexName_, indexDoc_);
+          }
+        }
+      } else {
+        var->fill(iEvent, selptrs, *out, nullptr, nullptr, "", "");
+      }
+    }
+    for (const auto &var : this->typedextvars_)
+      var->fill(iEvent, selptrs, *out);
+
+    if (useCount_){
+      std::unique_ptr<edm::ValueMap<unsigned int>> count_VM(new edm::ValueMap<unsigned int>());
+      edm::ValueMap<unsigned int>::Filler filler_count(*count_VM);
+      filler_count.insert(prod, counts.begin(), counts.end());
+      filler_count.fill();
+      iEvent.put(std::move(count_VM), "count");
+    }
+
+    if (useOffset_){
+      std::unique_ptr<edm::ValueMap<unsigned int>> offset_VM(new edm::ValueMap<unsigned int>());
+      edm::ValueMap<unsigned int>::Filler filler_offset(*offset_VM);
+      filler_offset.insert(prod, offsets.begin(), offsets.end());
+      filler_offset.fill();
+      iEvent.put(std::move(offset_VM), "offset");
+    }
+
+    return out;
+  }
+
+protected:
+  bool singleton_;
+  const unsigned int maxLen_;
+  const StringCutObjectSelector<T> cut_;
+
+  typedef ValueMapVariableArray<T, int32_t> IntExtVarArr;
+  typedef ValueMapVariableArray<T, uint32_t> UIntExtVarArr;
+  typedef ValueMapVariableArray<T, float> FloatExtVarArr;
+  typedef ValueMapVariableArray<T, double, float> DoubleExtVarArr;
+  typedef ValueMapVariableArray<T, bool> BoolExtVarArr;
+  typedef ValueMapVariableArray<T, int, uint8_t> UInt8ExtVarArr;
+  typedef ValueMapVariableArray<T, int, int16_t> Int16ExtVarArr;
+  typedef ValueMapVariableArray<T, int, uint16_t> UInt16ExtVarArr;
+  std::vector<std::unique_ptr<ExtVariable<T>>> extvars_;
+  std::vector<std::unique_ptr<ExtVariable<T>>> typedextvars_;
+};
