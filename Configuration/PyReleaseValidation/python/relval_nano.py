@@ -241,6 +241,19 @@ steps['NANO_mc13.3']=merge([{'--era':'Run3',
 steps['NANO_mcScouting13.X']=merge([{'-s':'NANO:@Scout'},
                                     steps['NANO_mc13.3']])
 
+
+##14.0 INPUT
+steps['NANO_data14.0']=merge([{'--era':'Run3_2024',
+                               '--conditions':'auto:run3_data'},
+                              _NANO_data])
+
+steps['ScoutingPFRun32024EHLTSCOUT14.0']={'INPUT':InputInfo(location='STD', label='2024E',
+                                                            dataSet='/ScoutingPFRun3/Run2024E-v1/HLTSCOUT')}
+
+steps['NANO_dataRun3ScoutingPF14.0']=merge([{'-s':'NANO:@Scout', '-n':10000},
+                                             steps['NANO_data14.0']])
+
+
 _wfn=WFN(2500)
 ################
 #10.6 input
@@ -298,8 +311,14 @@ workflows[_wfn()] = ['lepTrackInfoNANOmc132X', ['TTBarMINIAOD13.2', 'lepTrackInf
 _wfn.next()
 ################
 #13.X workflows
-workflows[_wfn()] = ['ScoutingNanodata13X',['ScoutingPFRun32022DRAW13.X', 'NANO_dataRun3ScoutingPF13.X']]
+workflows[_wfn()] = ['ScoutingNANOdata13X',['ScoutingPFRun32022DRAW13.X', 'NANO_dataRun3ScoutingPF13.X']]
 _wfn.subnext()
-workflows[_wfn()] = ['ScoutingNanomc13X',['TTBarMINIAOD13.3','NANO_mcScouting13.X']]
+workflows[_wfn()] = ['ScoutingNANOmc13X',['TTBarMINIAOD13.3','NANO_mcScouting13.X']]
+
+_wfn.next()
+################
+#14.0 workflows
+workflows[_wfn()] = ['ScoutingNANOdata140', ['ScoutingPFRun32024EHLTSCOUT14.0', 'NANO_dataRun3ScoutingPF14.0']]
 
 ################
+
