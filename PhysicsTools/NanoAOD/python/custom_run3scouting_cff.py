@@ -11,6 +11,9 @@ from PhysicsTools.PatAlgos.slimming.slimmedPatTrigger_cfi import slimmedPatTrigg
 ### Sub Task Definitions ###
 ############################
 
+# Task contains all dependent tasks
+# ExtensionTask must be run on top of another Task
+
 #############################
 # Scouting Original Objects #
 #############################
@@ -24,7 +27,7 @@ from Configuration.Eras.Modifier_run3_scouting_nanoAOD_post2023_cff import run3_
 run3_scouting_nanoAOD_post2023.toReplaceWith(scoutingMuonTableTask, cms.Task(scoutingMuonVtxTable, scoutingMuonNoVtxTable))\
     .toReplaceWith(scoutingMuonDisplacedVertexTableTask, cms.Task(scoutingMuonVtxDisplacedVertexTable, scoutingMuonNoVtxDisplacedVertexTable))
 
-# other collections are directly dumped, so uncessary to define task
+# other collections are directly dumped, so unnessary to define tasks
 
 ############################
 # Scouting Derived Objects #
@@ -32,9 +35,21 @@ run3_scouting_nanoAOD_post2023.toReplaceWith(scoutingMuonTableTask, cms.Task(sco
 
 scoutingPFCandidateTask = cms.Task(scoutingPFCandidate, scoutingPFCandidateTable)
 scoutingPFJetReclusterTask = cms.Task(scoutingPFCandidate, scoutingPFJetRecluster, scoutingPFJetReclusterTable)
-scoutingCHSJetReclusterTask = cms.Task(scoutingPFCHSCandidate, scoutingCHSJetRecluster, scoutingCHSJetReclusterTable)
-scoutingFatCHSJetReclusterTask = cms.Task(scoutingPFCHSCandidate, scoutingFatCHSJetRecluster, scoutingFatCHSJetReclusterTable)
 
+scoutingCHSJetReclusterTask = cms.Task(scoutingPFCHSCandidate, scoutingCHSJetRecluster, scoutingCHSJetReclusterTable)
+scoutingCHSJetReclusterParticleNetTagExtensionTask = cms.Task(scoutingCHSJetReclusterParticleNetJetTagInfos, scoutingCHSJetReclusterParticleNetJetTags, 
+        scoutingCHSJetReclusterParticleNetTagExtensionTable)
+scoutingCHSJetReclusterMatchGenExtensionTask = cms.Task(scoutingCHSJetReclusterMatchGen, scoutingCHSJetReclusterMatchGenExtensionTable)
+
+scoutingFatCHSJetReclusterTask = cms.Task(scoutingPFCHSCandidate, scoutingFatCHSJetRecluster, scoutingFatCHSJetReclusterTable)
+scoutingFatCHSJetReclusterParticleNetTagExtensionTask = cms.Task(scoutingFatCHSJetReclusterParticleNetJetTagInfos, scoutingFatCHSJetReclusterParticleNetJetTags,
+        scoutingFatCHSJetReclusterParticleNetTagExtensionTable)
+scoutingFatCHSJetReclusterSoftDropMassExtensionTask = cms.Task(scoutingFatCHSJetReclusterSoftDrop, scoutingFatCHSJetReclusterSoftDropMass,
+        scoutingFatCHSJetReclusterSoftDropMassExtensionTable)
+scoutingFatCHSJetReclusterParticleNetMassExtensionTask = cms.Task(scoutingFatCHSJetReclusterParticleNetJetTagInfos, scoutingFatCHSJetReclusterParticleNetMassRegressionJetTags,
+        scoutingFatCHSJetReclusterParticleNetMassExtensionTable)
+scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTask = cms.Task(scoutingFatCHSJetReclusterEcfNbeta1, scoutingFatCHSJetReclusterNjettiness,
+        scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTable)
 scoutingFatCHSJetReclusterMatchGenExtensionTask = cms.Task(scoutingFatCHSJetReclusterMatchGen, scoutingFatCHSJetReclusterMatchGenExtensionTable)
 
 # TODO: add the remaining derived objects
@@ -100,7 +115,12 @@ def prepareScoutingNanoTaskCommon():
     scoutingNanoTaskCommon.add(scoutingPFCandidateTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterTask)
     scoutingNanoTaskCommon.add(scoutingCHSJetReclusterTask)
+    scoutingNanoTaskCommon.add(scoutingCHSJetReclusterParticleNetTagExtensionTask)
     scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterTask)
+    scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterParticleNetTagExtensionTask)
+    scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterSoftDropMassExtensionTask)
+    scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterParticleNetMassExtensionTask)
+    scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTask)
 
     return scoutingNanoTaskCommon
 
@@ -117,8 +137,9 @@ def prepareScoutingTriggerTask():
 def prepareScoutingNanoTaskMC():
     # additional tasks for running on mc
     scoutingNanoTaskMC = cms.Task()
+    scoutingNanoTaskMC.add(scoutingCHSJetReclusterMatchGenExtensionTask)
     scoutingNanoTaskMC.add(scoutingFatCHSJetReclusterMatchGenExtensionTask)
-    return cms.Task()
+    return scoutingNanoTaskMC
 
 # Common tasks are added to sequence
 scoutingNanoTaskCommon = prepareScoutingNanoTaskCommon()
@@ -142,7 +163,6 @@ def customiseScoutingNanoAOD(process):
     runOnMC = hasattr(process,"NANOEDMAODSIMoutput") or hasattr(process,"NANOAODSIMoutput")
     if runOnMC:
         #from PhysicsTools.NanoAOD.globals_cff import puTable
-        #process.pileupTask = cms.Task(puTable)
         process.scoutingNanoSequence.associate(scoutingNanoTaskMC)
         # if running with standard object, GEN objects are already added
         # if running standalone, GEN objects need to be added
