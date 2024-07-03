@@ -884,22 +884,21 @@ public:
             const std::string &index_name, const std::string &index_doc) const override {
 
     std::vector<ValType> vals;
-    ValType val; // temporary object
+    // ValType val; // temporary object
     unsigned int offset = 0;
     std::vector<unsigned int> indices;
     for (unsigned int i = 0, n = selobjs.size(); i < n; ++i) {
       auto arr = func_(*selobjs[i]);
       for (const auto& elem : arr){
-        val = elem;
-        if constexpr (std::is_same<ValType, float>()) {
+        /*if constexpr (std::is_same<ValType, float>()) {
           if (this->precision_ == -2) {
             auto prec = precisionFunc_(elem);
             if (prec > 0) {
-              val = MiniFloatConverter::reduceMantissaToNbitsRounding(val, prec);
+              elem = MiniFloatConverter::reduceMantissaToNbitsRounding(elem, prec);
             }
           }
-        }
-        vals.push_back(val);
+        }*/
+        vals.push_back(elem);
 
         if (!index_name.empty())
           indices.push_back(i);
@@ -937,16 +936,19 @@ public:
 };
 
 template <typename ObjType, typename TIn, typename ValType = TIn>
-class ValueMapVariableArrayBase : public ExtVariableArray<ObjType> {
+class ValueMapVariableArray : public ExtVariableArray<ObjType> {
 public:
-  ValueMapVariableArrayBase(const std::string &aname,
+  ValueMapVariableArray(const std::string &aname,
                             const edm::ParameterSet &cfg,
                             edm::ConsumesCollector &&cc,
                             bool skipNonExistingSrc = false)
       : ExtVariableArray<ObjType>(aname, cfg),
         skipNonExistingSrc_(skipNonExistingSrc),
         token_(cc.consumes<edm::ValueMap<TIn>>(cfg.getParameter<edm::InputTag>("src"))) {}
-  virtual ValType eval(const edm::Handle<edm::ValueMap<TIn>> &vmap, const edm::Ptr<ObjType> &op) const = 0;
+  ValType eval(const edm::Handle<edm::ValueMap<TIn>> &vmap, const edm::Ptr<ObjType> &op) const {
+    ValType val = (*vmap)[op];
+    return val;
+  }
   void fill(const edm::Event &iEvent, std::vector<edm::Ptr<ObjType>> selptrs, nanoaod::FlatTable &out,
             std::vector<unsigned int>* counts,
             std::vector<unsigned int>* offsets,
@@ -964,7 +966,7 @@ public:
         for (const auto& elem : arr){
           vals.push_back(elem);
           if (!index_name.empty())
-            indices.push_bacK(i);
+            indices.push_back(i);
       }
       if (counts)
         counts.push_back(arr.size());
@@ -984,6 +986,7 @@ protected:
   edm::EDGetTokenT<edm::ValueMap<TIn>> token_;
 };
 
+/*
 template <typename ObjType, typename TIn, typename ValType = TIn>
 class ValueMapVariableArray : public ValueMapVariableArrayBase<ObjType, TIn, ValType> {
 public:
@@ -996,7 +999,8 @@ public:
     ValType val = (*vmap)[op];
     return val;
   }
-};
+}; 
+*/
 
 template <typename T, typename TProd>
 class SimpleArrayFlatTableProducerBase : public edm::stream::EDProducer<> {
