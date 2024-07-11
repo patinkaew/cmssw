@@ -33,11 +33,13 @@ run3_scouting_nanoAOD_post2023.toReplaceWith(scoutingMuonTableTask, cms.Task(sco
 # Scouting Derived Objects #
 ############################
 
+hltAK4PFCorrectorTask = cms.Task(hltAK4PFFastJetCorrector, hltAK4PFRelativeCorrector, hltAK4PFAbsoluteCorrector, hltAK4PFResidualCorrector, hltAK4PFCorrector)
+
+scoutingPFJetCorrectedTask = cms.Task(scoutingPFJetReco, hltAK4PFCorrectorTask, scoutingPFJetCorrected, scoutingPFJetCorrectedTable)
+
 scoutingPFCandidateTask = cms.Task(scoutingPFCandidate, scoutingPFCandidateTable)
 scoutingPFJetReclusterTask = cms.Task(scoutingPFCandidate, scoutingPFJetRecluster, scoutingPFJetReclusterTable)
-scoutingPFJetReclusterCorrectedTask = cms.Task(scoutingPFCandidate, scoutingPFJetRecluster,
-        hltAK4PFFastJetCorrector, hltAK4PFRelativeCorrector, hltAK4PFAbsoluteCorrector, hltAK4PFResidualCorrector, hltAK4PFCorrector,
-        scoutingPFJetReclusterCorrected, scoutingPFJetReclusterCorrectedTable)
+scoutingPFJetReclusterCorrectionExtensionTask = cms.Task(hltAK4PFCorrectorTask, scoutingPFJetReclusterCorrected, scoutingPFJetReclusterCorrectionExtensionTable)
 
 scoutingCHSJetReclusterTask = cms.Task(scoutingPFCHSCandidate, scoutingCHSJetRecluster, scoutingCHSJetReclusterTable)
 scoutingCHSJetReclusterParticleNetTagExtensionTask = cms.Task(scoutingCHSJetReclusterParticleNetJetTagInfos, scoutingCHSJetReclusterParticleNetJetTags, 
@@ -110,13 +112,14 @@ def prepareScoutingNanoTaskCommon():
     scoutingNanoTaskCommon.add(scoutingTrackTable)
     scoutingNanoTaskCommon.add(scoutingPrimaryVertexTable)
     #scoutingNanoTaskCommon.add(scoutingParticleTable)
-    scoutingNanoTaskCommon.add(scoutingPFJetTable)
+    #scoutingNanoTaskCommon.add(scoutingPFJetTable)
     scoutingNanoTaskCommon.add(scoutingMETTable, scoutingRhoTable)
     
     # Scouting derived objects
     scoutingNanoTaskCommon.add(scoutingPFCandidateTask)
+    scoutingNanoTaskCommon.add(scoutingPFJetCorrectedTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterTask)
-    scoutingNanoTaskCommon.add(scoutingPFJetReclusterCorrectedTask)
+    scoutingNanoTaskCommon.add(scoutingPFJetReclusterCorrectionExtensionTask)
     scoutingNanoTaskCommon.add(scoutingCHSJetReclusterTask)
     scoutingNanoTaskCommon.add(scoutingCHSJetReclusterParticleNetTagExtensionTask)
     scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterTask)
@@ -132,7 +135,7 @@ def prepareScoutingTriggerTask():
     # also add L1 objects and Trig objects
     scoutingTriggerTask = cms.Task(gtStage2DigisScouting)
     scoutingTriggerTask.add(cms.Task(l1MuScoutingTable, l1EGScoutingTable, l1TauScoutingTable, l1JetScoutingTable, l1EtSumScoutingTable))
-    #scoutingTriggerTask.add(cms.Task(l1bitsScouting, patTriggerScouting))
+    scoutingTriggerTask.add(cms.Task(l1bitsScouting, patTriggerScouting))
     #scoutingTriggerTask.add(cms.Task(selectedPatTriggerScouting, slimmedPatTriggerScouting, unpackedPatTriggerScouting, scoutingTriggerObjectTable))
     
     return scoutingTriggerTask

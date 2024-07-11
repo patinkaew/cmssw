@@ -553,16 +553,37 @@ hltAK4PFCorrector = cms.EDProducer("ChainedJetCorrectorProducer",
     correctors = cms.VInputTag(["hltAK4PFFastJetCorrector", "hltAK4PFRelativeCorrector", "hltAK4PFAbsoluteCorrector", "hltAK4PFResidualCorrector" ])
 )
 
-scoutingPFJetReclusterCorrected = cms.EDProducer( "CorrectedPFJetProducer",
-    correctors = cms.VInputTag([ "hltAK4PFCorrector" ]),
-    src = cms.InputTag( "scoutingPFJetRecluster")
+scoutingPFJetReco = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
+    scoutingPFJet = cms.InputTag("hltScoutingPFPacker"),
 )
 
-scoutingPFJetReclusterCorrectedTable = scoutingPFJetReclusterTable.clone(
-    src = cms.InputTag("scoutingPFJetReclusterCorrected"),
-    name = cms.string("ScoutingPFJetReclusterCorrected"),
+scoutingPFJetCorrected = cms.EDProducer("CorrectedPFJetProducer",
+    correctors = cms.VInputTag(["hltAK4PFCorrector"]),
+    src = cms.InputTag("scoutingPFJetReco"),
+    saveJECFactor = cms.untracked.bool(True),
+)
+
+scoutingPFJetCorrectedTable = scoutingPFJetReclusterTable.clone(
+    src = cms.InputTag("scoutingPFJetReco"),
+    name = cms.string("ScoutingPFJet"),
     cut = cms.string(""),
-    doc = cms.string("Jet from reclustering scouting PF candidates with JEC applied")
+    doc = cms.string("Scouting PFJet"),
+    externalVariables = cms.PSet(
+        jecFactor = ExtVar(cms.InputTag("scoutingPFJetCorrected", "jecFactor"), "double", doc="factor to get to corrected pT"),
+    ), 
+)
+
+scoutingPFJetReclusterCorrected = cms.EDProducer( "CorrectedPFJetProducer",
+    correctors = cms.VInputTag([ "hltAK4PFCorrector" ]),
+    src = cms.InputTag( "scoutingPFJetRecluster"),
+    saveJECFactor = cms.untracked.bool(True),
+)
+
+scoutingPFJetReclusterCorrectionExtensionTable = scoutingPFJetReclusterTable.clone(
+    extension = cms.bool(True),
+    externalVariables = cms.PSet(
+        jecFactor = ExtVar(cms.InputTag("scoutingPFJetReclusterCorrected", "jecFactor"), "double", doc="factor to get to corrected pT")
+    ),
 )
 
 ####################
