@@ -35,6 +35,9 @@ run3_scouting_nanoAOD_post2023.toReplaceWith(scoutingMuonTableTask, cms.Task(sco
 
 scoutingPFCandidateTask = cms.Task(scoutingPFCandidate, scoutingPFCandidateTable)
 scoutingPFJetReclusterTask = cms.Task(scoutingPFCandidate, scoutingPFJetRecluster, scoutingPFJetReclusterTable)
+scoutingPFJetReclusterCorrectedTask = cms.Task(scoutingPFCandidate, scoutingPFJetRecluster,
+        hltAK4PFFastJetCorrector, hltAK4PFRelativeCorrector, hltAK4PFAbsoluteCorrector, hltAK4PFResidualCorrector, hltAK4PFCorrector,
+        scoutingPFJetReclusterCorrected, scoutingPFJetReclusterCorrectedTable)
 
 scoutingCHSJetReclusterTask = cms.Task(scoutingPFCHSCandidate, scoutingCHSJetRecluster, scoutingCHSJetReclusterTable)
 scoutingCHSJetReclusterParticleNetTagExtensionTask = cms.Task(scoutingCHSJetReclusterParticleNetJetTagInfos, scoutingCHSJetReclusterParticleNetJetTags, 
@@ -52,7 +55,6 @@ scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTask = cms.Task(scouti
         scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTable)
 scoutingFatCHSJetReclusterMatchGenExtensionTask = cms.Task(scoutingFatCHSJetReclusterMatchGen, scoutingFatCHSJetReclusterMatchGenExtensionTable)
 
-# TODO: add the remaining derived objects
 
 ###################
 # Trigger Objects #
@@ -114,6 +116,7 @@ def prepareScoutingNanoTaskCommon():
     # Scouting derived objects
     scoutingNanoTaskCommon.add(scoutingPFCandidateTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterTask)
+    scoutingNanoTaskCommon.add(scoutingPFJetReclusterCorrectedTask)
     scoutingNanoTaskCommon.add(scoutingCHSJetReclusterTask)
     scoutingNanoTaskCommon.add(scoutingCHSJetReclusterParticleNetTagExtensionTask)
     scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterTask)
@@ -155,7 +158,6 @@ def customiseScoutingNanoAOD(process):
     # if running standalone, triggerSequence need to be added
     if not ((hasattr(process, "nanoSequence") and process.schedule.contains(process.nanoSequence))
             or hasattr(process, "nanoSequenceMC") and process.schedule.contains(process.nanoSequenceMC)):
-        print("adding trigger")
         process.trigger_step = cms.Path(process.scoutingTriggerSequence)
         process.schedule.extend([process.trigger_step])
 

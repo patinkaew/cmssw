@@ -526,14 +526,43 @@ scoutingRawCHSMETReclusterTable = cms.EDProducer("SimplePFJetFlatTableProducer",
 # Jet Energy Correction #
 #########################
 
+# adapt from HLT menu
+
 hltAK4PFFastJetCorrector = cms.EDProducer("L1FastjetCorrectorProducer",
     algorithm = cms.string("AK4PFHLT"),
     level = cms.string("L1FastJet"),
     srcRho = cms.InputTag("hltScoutingPFPacker", "rho")
 )
 
+hltAK4PFRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+    algorithm = cms.string( "AK4PFHLT" ),
+    level = cms.string( "L2Relative" )
+)
+
+hltAK4PFAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+    algorithm = cms.string( "AK4PFHLT" ),
+    level = cms.string( "L3Absolute" )
+)
+
+hltAK4PFResidualCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+    algorithm = cms.string( "AK4PFHLT" ),
+    level = cms.string( "L2L3Residual" )
+)
+
 hltAK4PFCorrector = cms.EDProducer("ChainedJetCorrectorProducer",
-    correctors = cms.VInputTag( ["hltAK4PFFastJetCorrector"]), #, "hltAK4PFRelativeCorrector", "hltAK4PFAbsoluteCorrector", "hltAK4PFResidualCorrector" ] )
+    correctors = cms.VInputTag(["hltAK4PFFastJetCorrector", "hltAK4PFRelativeCorrector", "hltAK4PFAbsoluteCorrector", "hltAK4PFResidualCorrector" ])
+)
+
+scoutingPFJetReclusterCorrected = cms.EDProducer( "CorrectedPFJetProducer",
+    correctors = cms.VInputTag([ "hltAK4PFCorrector" ]),
+    src = cms.InputTag( "scoutingPFJetRecluster")
+)
+
+scoutingPFJetReclusterCorrectedTable = scoutingPFJetReclusterTable.clone(
+    src = cms.InputTag("scoutingPFJetReclusterCorrected"),
+    name = cms.string("ScoutingPFJetReclusterCorrected"),
+    cut = cms.string(""),
+    doc = cms.string("Jet from reclustering scouting PF candidates with JEC applied")
 )
 
 ####################
