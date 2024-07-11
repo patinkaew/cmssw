@@ -9,8 +9,8 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/Scouting/interface/Run3ScoutingVertex.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/Common/interface/OrphanHandle.h"
 
 class Run3ScoutingVertexToRecoVertexProducer : public edm::stream::EDProducer<> {
