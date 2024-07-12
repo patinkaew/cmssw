@@ -208,7 +208,6 @@ def addScoutingOriginalWithoutParticleAndTrack(process):
     process.scoutingNanoTask.add(scoutingMuonTableTask, scoutingMuonDisplacedVertexTableTask)
     process.scoutingNanoTask.add(scoutingElectronTable)
     process.scoutingNanoTask.add(scoutingPhotonTable)
-    process.scoutingNanoTask.add(scoutingTrackTable)
     process.scoutingNanoTask.add(scoutingPrimaryVertexTable)
     process.scoutingNanoTask.add(scoutingPFJetTable)
     process.scoutingNanoTask.add(scoutingMETTable, scoutingRhoTable)
