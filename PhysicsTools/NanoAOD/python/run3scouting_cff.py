@@ -428,7 +428,7 @@ scoutingPFCHSCandidate = cms.EDProducer("Run3ScoutingParticleToRecoPFCandidatePr
 from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
 scoutingPFJetRecluster = ak4PFJets.clone(
      src = ("scoutingPFCandidate"),
-     jetPtMin = 0,
+     jetPtMin = 20,
 )
 
 scoutingPFJetReclusterTable = cms.EDProducer("SimplePFJetFlatTableProducer",
@@ -479,7 +479,7 @@ scoutingRawPFMETReclusterTable = cms.EDProducer("SimpleCandidateFlatTableProduce
 
 scoutingCHSJetRecluster = ak4PFJets.clone(
      src = ("scoutingPFCHSCandidate"),
-     jetPtMin = 0,
+     jetPtMin = 20,
 )
 
 scoutingCHSJetReclusterTable = scoutingPFJetReclusterTable.clone(
