@@ -1,11 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 from PhysicsTools.NanoAOD.run3scouting_cff import *
-from PhysicsTools.NanoAOD.triggerObjects_cff import unpackedPatTrigger, triggerObjectTable, l1bits
 from L1Trigger.Configuration.L1TRawToDigi_cff import *
 from EventFilter.L1TRawToDigi.gtStage2Digis_cfi import gtStage2Digis
-from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import patTrigger
-from PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi import selectedPatTrigger
-from PhysicsTools.PatAlgos.slimming.slimmedPatTrigger_cfi import slimmedPatTrigger
+from PhysicsTools.NanoAOD.triggerObjects_cff import l1bits
+#from PhysicsTools.NanoAOD.triggerObjects_cff import unpackedPatTrigger, triggerObjectTable
+#from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import patTrigger
+#from PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi import selectedPatTrigger
+#from PhysicsTools.PatAlgos.slimming.slimmedPatTrigger_cfi import slimmedPatTrigger
 
 ############################
 ### Sub Task Definitions ###
@@ -65,10 +66,6 @@ scoutingFatCHSJetReclusterMatchGenExtensionTask = cms.Task(scoutingFatCHSJetRecl
 ## L1 decisions
 gtStage2DigisScouting = gtStage2Digis.clone(InputLabel="hltFEDSelectorL1")
 l1bitsScouting = l1bits.clone(src="gtStage2DigisScouting") 
-patTriggerScouting = patTrigger.clone(
-        l1tAlgBlkInputTag = "gtStage2DigisScouting", 
-        l1tExtBlkInputTag = "gtStage2DigisScouting"
-        )
 
 ## L1 objects
 from PhysicsTools.NanoAOD.l1trig_cff import *
@@ -86,37 +83,42 @@ l1TauScoutingTable.variables = cms.PSet(l1TauReducedVars)
 l1EtSumScoutingTable.variables = cms.PSet(l1EtSumReducedVars)
 
 # Trig objects
-selectedPatTriggerScouting = selectedPatTrigger.clone(src="patTriggerScouting")
-slimmedPatTriggerScouting = slimmedPatTrigger.clone(src="selectedPatTriggerScouting")
-unpackedPatTriggerScouting = unpackedPatTrigger.clone(patTriggerObjectsStandAlone="slimmedPatTriggerScouting")
-scoutingTriggerObjectTable = triggerObjectTable.clone(
-        src = "unpackedPatTriggerScouting",
-        l1EG = cms.InputTag("gtStage2DigisScouting", "EGamma"),
-        l1Sum = cms.InputTag("gtStage2DigisScouting", "EtSum"),
-        l1Jet = cms.InputTag("gtStage2DigisScouting", "Jet"),
-        l1Muon = cms.InputTag("gtStage2DigisScouting", "Muon"),
-        l1Tau = cms.InputTag("gtStage2DigisScouting", "Tau"),
-        )
+#patTriggerScouting = patTrigger.clone(
+#        l1tAlgBlkInputTag = "gtStage2DigisScouting", 
+#        l1tExtBlkInputTag = "gtStage2DigisScouting"
+#        )
+#selectedPatTriggerScouting = selectedPatTrigger.clone(src="patTriggerScouting")
+#slimmedPatTriggerScouting = slimmedPatTrigger.clone(src="selectedPatTriggerScouting")
+#unpackedPatTriggerScouting = unpackedPatTrigger.clone(patTriggerObjectsStandAlone="slimmedPatTriggerScouting")
+#scoutingTriggerObjectTable = triggerObjectTable.clone(
+#        src = "unpackedPatTriggerScouting",
+#        l1EG = cms.InputTag("gtStage2DigisScouting", "EGamma"),
+#        l1Sum = cms.InputTag("gtStage2DigisScouting", "EtSum"),
+#        l1Jet = cms.InputTag("gtStage2DigisScouting", "Jet"),
+#        l1Muon = cms.InputTag("gtStage2DigisScouting", "Muon"),
+#        l1Tau = cms.InputTag("gtStage2DigisScouting", "Tau"),
+#        )
 
 ##############################
 ### Main Tasks Definitions ###
 ##############################
 
 # default configuration for ScoutingNano
+# all Scouting objects are saved except PFCandidate and Track
 def prepareScoutingNanoTaskCommon():
     # Scouting original objects
     scoutingNanoTaskCommon = cms.Task()
     scoutingNanoTaskCommon.add(scoutingMuonTableTask, scoutingMuonDisplacedVertexTableTask)
     scoutingNanoTaskCommon.add(scoutingElectronTable)
     scoutingNanoTaskCommon.add(scoutingPhotonTable)
-    scoutingNanoTaskCommon.add(scoutingTrackTable)
+    #scoutingNanoTaskCommon.add(scoutingTrackTable)
     scoutingNanoTaskCommon.add(scoutingPrimaryVertexTable)
     #scoutingNanoTaskCommon.add(scoutingParticleTable)
     #scoutingNanoTaskCommon.add(scoutingPFJetTable)
     scoutingNanoTaskCommon.add(scoutingMETTable, scoutingRhoTable)
     
     # Scouting derived objects
-    scoutingNanoTaskCommon.add(scoutingPFCandidateTask)
+    #scoutingNanoTaskCommon.add(scoutingPFCandidateTask)
     scoutingNanoTaskCommon.add(scoutingPFJetCorrectedTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterCorrectionExtensionTask)
@@ -132,10 +134,13 @@ def prepareScoutingNanoTaskCommon():
 
 def prepareScoutingTriggerTask():
     # add necessary tasks for trigger table
-    # also add L1 objects and Trig objects
-    scoutingTriggerTask = cms.Task(gtStage2DigisScouting)
+    # also add L1 objects
+    scoutingTriggerTask = cms.Task(gtStage2DigisScouting, l1bitsScouting)
     scoutingTriggerTask.add(cms.Task(l1MuScoutingTable, l1EGScoutingTable, l1TauScoutingTable, l1JetScoutingTable, l1EtSumScoutingTable))
-    scoutingTriggerTask.add(cms.Task(l1bitsScouting, patTriggerScouting))
+    #scoutingTriggerTask.add(patTriggerScouting)
+    #scoutingTriggerTask.add(unpackedPatTriggerScouting)
+    #scoutingTriggerTask.add(scoutingTriggerObjectTable)
+    #scoutingTriggerTask.add(cms.Task(selectedPatTriggerScouting, slimmedPatTriggerScouting, unpackedPatTriggerScouting))
     #scoutingTriggerTask.add(cms.Task(selectedPatTriggerScouting, slimmedPatTriggerScouting, unpackedPatTriggerScouting, scoutingTriggerObjectTable))
     
     return scoutingTriggerTask
@@ -153,7 +158,8 @@ scoutingNanoSequence = cms.Sequence(scoutingNanoTaskCommon)
 
 # Specific tasks will be added to sequence during customization
 scoutingTriggerTask = prepareScoutingTriggerTask()
-scoutingTriggerSequence = cms.Sequence(L1TRawToDigi+patTriggerScouting+selectedPatTriggerScouting+slimmedPatTriggerScouting+cms.Sequence(scoutingTriggerTask))
+#scoutingTriggerSequence = cms.Sequence(L1TRawToDigi+patTriggerScouting+selectedPatTriggerScouting+slimmedPatTriggerScouting+cms.Sequence(scoutingTriggerTask))
+scoutingTriggerSequence = cms.Sequence(L1TRawToDigi+cms.Sequence(scoutingTriggerTask))
 scoutingNanoTaskMC = prepareScoutingNanoTaskMC()
 
 def customiseScoutingNanoAOD(process):
@@ -161,6 +167,7 @@ def customiseScoutingNanoAOD(process):
     # if running standalone, triggerSequence need to be added
     if not ((hasattr(process, "nanoSequence") and process.schedule.contains(process.nanoSequence))
             or hasattr(process, "nanoSequenceMC") and process.schedule.contains(process.nanoSequenceMC)):
+        print("Adding trigger sequence")
         process.trigger_step = cms.Path(process.scoutingTriggerSequence)
         process.schedule.extend([process.trigger_step])
 
@@ -174,6 +181,17 @@ def customiseScoutingNanoAOD(process):
         if not (hasattr(process, "nanoSequenceMC") and process.schedule.contains(process.nanoSequenceMC)):
             pass
     
+    return process
+
+def customiseScoutingPFNanoAOD(process):
+    customiseScoutingNanoAOD(process)
+    process.scoutingNanoTask.add(scoutingPFCandidateTask)
+    return process
+
+def customiseScoutingFullNanoAOD(process):
+    customiseScoutingNanoAOD(process)
+    process.scoutingNanoTask.add(scoutingTrackTable)
+    process.scoutingNanoTask.add(scoutingPFCandidateTask)
     return process
 
 #####################
