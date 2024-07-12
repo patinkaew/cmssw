@@ -185,13 +185,13 @@ def customiseScoutingNanoAOD(process):
 
 def customiseScoutingPFNanoAOD(process):
     customiseScoutingNanoAOD(process)
-    process.scoutingNanoTask.add(scoutingPFCandidateTask)
+    process.scoutingNanoSequence.associate(scoutingPFCandidateTask)
     return process
 
 def customiseScoutingFullNanoAOD(process):
     customiseScoutingNanoAOD(process)
-    process.scoutingNanoTask.add(scoutingTrackTable)
-    process.scoutingNanoTask.add(scoutingPFCandidateTask)
+    process.scoutingNanoSequence.associate(cms.Task(scoutingTrackTable))
+    process.scoutingNanoSequence.associate(scoutingPFCandidateTask)
     return process
 
 #####################
@@ -201,7 +201,7 @@ def customiseScoutingFullNanoAOD(process):
 # e.g. --customise PhysicsTools/NanoAOD/python/custom_run3scouting_cff.addScoutingPFCandidate
 
 def addScoutingPFCandidate(process):
-    process.scoutingNanoTask.add(scoutingPFCandidateTask)
+    process.scoutingSequence.associate(scoutingPFCandidateTask)
     return process
 
 def addScoutingOriginalWithoutParticleAndTrack(process): 
@@ -233,6 +233,12 @@ def resetScoutingTask(process):
     # reset all tasks related to scoutingNano configuration
     if hasattr(process, "scoutingNanoTask"):
         process.scoutingNanoTask = cms.Task()
+    return process
+
+def dropJetReclusterPtMin(process):
+    scoutingPFJetRecluster.jetPtMin = 0
+    scoutingCHSJetRecluster.jetPtMin = 0
+    scoutingFatCHSJetRecluster.jetPtMin = 0
     return process
 
 def addOfflinePFCandidate(process):
