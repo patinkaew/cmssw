@@ -553,6 +553,8 @@ hltAK4PFCorrector = cms.EDProducer("ChainedJetCorrectorProducer",
     correctors = cms.VInputTag(["hltAK4PFFastJetCorrector", "hltAK4PFRelativeCorrector", "hltAK4PFAbsoluteCorrector", "hltAK4PFResidualCorrector" ])
 )
 
+# translation from Run3ScoutingPFJet to reco::PFJet
+# this is needed for applying JEC
 scoutingPFJetReco = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
     scoutingPFJet = cms.InputTag("hltScoutingPFPacker"),
 )
@@ -662,8 +664,60 @@ scoutingFatCHSJetReclusterConstituentIndex = cms.EDProducer("RecoJetConstituentI
 # Secondary Vertexing #
 #######################
 
-# fetch beam spot information similar to HLT
-onlineBeamSpot = cms.EDProducer("BeamSpotOnlineProducer",
+scoutingTrackReco = cms.EDProducer("Run3ScoutingTrackToRecoTrackProducer",
+    scoutingTrack = cms.InputTag("hltScoutingTrackPacker")
+)
+
+scoutingTrackRecoTable = cms.EDProducer("SimpleTrackFlatTableProducer",
+     src = cms.InputTag("scoutingTrackReco"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingTrackReco"),
+     doc  = cms.string("Scouting Track after Reco"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         pt = Var('pt()', 'float', precision=10, doc='pt'),
+         eta = Var('eta()', 'float', precision=10, doc='eta'),
+         phi = Var('phi()', 'float', precision=10, doc='phi'),
+         chi2 = Var('chi2()', 'float', precision=10, doc='chi squared'),
+         ndof = Var('ndof()', 'float', precision=10, doc='number of degrees of freedom'),
+         charge = Var('charge()', 'int', doc='charge'),
+         dxy = Var('dxy()', 'float', precision=10, doc='dxy'),
+         dz = Var('dz()', 'float', precision=10, doc='dz'),
+         qoverp = Var('qoverp()', 'float', precision=10, doc='qoverp'),
+         lambda_ = Var('lambda()', 'float', precision=10, doc='lambda'),
+         dxyError = Var('dxyError()', 'float', precision=10, doc='dxyError'),
+         dzError = Var('dzError()', 'float', precision=10, doc='dzError'),
+         qoverpError = Var('qoverpError()', 'float', precision=10, doc='qoverpError'),
+         lambdaError = Var('lambdaError()', 'float', precision=10, doc='lambdaError'),
+         phiError = Var('phiError()', 'float', precision=10, doc='phiError'),
+         dsz = Var('dsz()', 'float', precision=10, doc='dsz'),
+         dszError = Var('dszError()', 'float', precision=10, doc='dszError'),
+         qoverp_lambda_cov = Var('covariance(0, 1)', 'float', precision=10, doc='qoverp lambda covariance ((0,1) element of covariance matrix)'),
+         qoverp_phi_cov = Var('covariance(0, 2)', 'float', precision=10, doc='qoverp phi covariance ((0,2) element of covariance matrix)'),
+         qoverp_dxy_cov = Var('covariance(0, 3)', 'float', precision=10, doc='qoverp dxy covariance ((0,3) element of covariance matrix)'),
+         qoverp_dsz_cov = Var('covariance(0, 4)', 'float', precision=10, doc='qoverp dsz covariance ((0,4) element of covariance matrix)'),
+         lambda_phi_cov = Var('covariance(1, 2)', 'float', precision=10, doc='lambda phi covariance ((1,2) element of covariance matrix)'),
+         lambda_dxy_cov = Var('covariance(1, 3)', 'float', precision=10, doc='lambda dxy covariance ((1,3) element of covariance matrix)'),
+         lambda_dsz_cov = Var('covariance(1, 4)', 'float', precision=10, doc='lambd dsz covariance ((1,4) element of covariance matrix)'),
+         phi_dxy_cov = Var('covariance(2, 3)', 'float', precision=10, doc='phi dxy covariance ((2,3) element of covariance matrix)'),
+         phi_dsz_cov = Var('covariance(2, 4)', 'float', precision=10, doc='phi dsz covariance ((2,4) element of covariance matrix)'),
+         dxy_dsz_cov = Var('covariance(3, 4)', 'float', precision=10, doc='dxy dsz covariance ((3,4) element of covariance matrix)'),
+         vx = Var('vx()', 'float', precision=10, doc='vx'),
+         vy = Var('vy()', 'float', precision=10, doc='vy'),
+         vz = Var('vz()', 'float', precision=10, doc='vz'),
+     )
+)
+
+# adapt from HLT menu
+hltOnlineBeamSpotESProducer = cms.ESProducer( "OnlineBeamSpotESProducer",
+    timeThreshold = cms.int32( 999999 ),
+    sigmaZThreshold = cms.double( 2.0 ),
+    sigmaXYThreshold = cms.double( 4.0 ),
+    appendToDataLabel = cms.string( "" )
+)
+
+hltOnlineBeamSpot = cms.EDProducer("BeamSpotOnlineProducer",
     beamMode = cms.untracked.uint32(11),
     changeToCMSCoordinates = cms.bool(False),
     gtEvmLabel = cms.InputTag(""),
@@ -673,6 +727,69 @@ onlineBeamSpot = cms.EDProducer("BeamSpotOnlineProducer",
     src = cms.InputTag(""),
     useTransientRecord = cms.bool(True),
 )
+
+from PhysicsTools.NanoAOD.globals_cff import beamSpotTable
+onlineBeamSpotTable = beamSpotTable.clone(
+    src = cms.InputTag("hltOnlineBeamSpot"),
+    name = cms.string("OnlineBeamSpot"),
+    doc = cms.string("Online reconstructed BeamSpot"),
+)
+
+hltVerticesPF = cms.EDProducer( "PrimaryVertexProducer",
+    TkClusParameters = cms.PSet(
+        TkDAClusParameters = cms.PSet(
+            Tmin = cms.double( 2.4 ),
+            Tpurge = cms.double( 2 ),
+            Tstop = cms.double( 0.5 ),
+            coolingFactor = cms.double( 0.6 ),
+            d0CutOff = cms.double( 999 ),
+            dzCutOff = cms.double( 4 ),
+            uniquetrkweight = cms.double( 0.9 ),
+            vertexSize = cms.double( 0.15 ),
+            zmerge = cms.double( 0.01 ),
+        ),
+        algorithm = cms.string( "DA_vect" ),
+    ),
+    TkFilterParameters = cms.PSet(
+        algorithm = cms.string( "filter" ),
+        maxD0Significance = cms.double( 999 ),
+        maxEta = cms.double( 100 ),
+        maxNormalizedChi2 = cms.double( 20 ),
+        minPixelLayersWithHits = cms.int32( 2 ),
+        minPt = cms.double( 0 ),
+        minSiliconLayersWithHits = cms.int32( 5 ),
+        trackQuality = cms.string( "any" ),
+    ),
+    TrackLabel = cms.InputTag( "scoutingTrackReco" ),
+    TrackTimeResosLabel = cms.InputTag( "dummy_default" ),
+    TrackTimesLabel = cms.InputTag( "dummy_default" ),
+    beamSpotLabel = cms.InputTag( "hltOnlineBeamSpot" ),
+    isRecoveryIteration = cms.bool( False ),
+    minTrackTimeQuality = cms.double( 0.8 ),
+    recoveryVtxCollection = cms.InputTag( "" ),
+    trackMTDTimeQualityVMapTag = cms.InputTag( "dummy_default" ),
+    useMVACut = cms.bool( False ),
+    verbose = cms.untracked.bool( False ),
+    vertexCollections = cms.VPSet(
+        cms.PSet(
+            algorithm = cms.string( "AdaptiveVertexFitter" ),
+            chi2cutoff = cms.double( 3 ),
+            label = cms.string( "" ),
+            maxDistanceToBeam = cms.double( 1 ),
+            minNdof = cms.double( 0 ),
+            useBeamConstraint = cms.bool( False ),
+        ),
+        cms.PSet(
+            algorithm = cms.string( "AdaptiveVertexFitter" ),
+            chi2cutoff = cms.double( 3 ),
+            label = cms.string( "WithBS" ),
+            maxDistanceToBeam = cms.double( 1 ),
+            minNdof = cms.double( 0 ),
+            useBeamConstraint = cms.bool( True ),
+        ),
+    ),
+)
+
 
 ###############
 # Jet Tagging #
