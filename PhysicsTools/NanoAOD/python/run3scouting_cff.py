@@ -556,7 +556,7 @@ hltAK4PFCorrector = cms.EDProducer("ChainedJetCorrectorProducer",
 # translation from Run3ScoutingPFJet to reco::PFJet
 # this is needed for applying JEC
 scoutingPFJetReco = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
-    scoutingPFJet = cms.InputTag("hltScoutingPFPacker"),
+    src = cms.InputTag("hltScoutingPFPacker"),
 )
 
 scoutingPFJetCorrected = cms.EDProducer("CorrectedPFJetProducer",
@@ -668,6 +668,7 @@ scoutingTrackReco = cms.EDProducer("Run3ScoutingTrackToRecoTrackProducer",
     scoutingTrack = cms.InputTag("hltScoutingTrackPacker")
 )
 
+# for testing
 scoutingTrackRecoTable = cms.EDProducer("SimpleTrackFlatTableProducer",
      src = cms.InputTag("scoutingTrackReco"),
      cut = cms.string(""),
@@ -728,6 +729,7 @@ hltOnlineBeamSpot = cms.EDProducer("BeamSpotOnlineProducer",
     useTransientRecord = cms.bool(True),
 )
 
+# for testing
 from PhysicsTools.NanoAOD.globals_cff import beamSpotTable
 onlineBeamSpotTable = beamSpotTable.clone(
     src = cms.InputTag("hltOnlineBeamSpot"),
@@ -736,60 +738,153 @@ onlineBeamSpotTable = beamSpotTable.clone(
 )
 
 hltVerticesPF = cms.EDProducer( "PrimaryVertexProducer",
-    TkClusParameters = cms.PSet(
-        TkDAClusParameters = cms.PSet(
-            Tmin = cms.double( 2.4 ),
-            Tpurge = cms.double( 2 ),
-            Tstop = cms.double( 0.5 ),
-            coolingFactor = cms.double( 0.6 ),
-            d0CutOff = cms.double( 999 ),
-            dzCutOff = cms.double( 4 ),
-            uniquetrkweight = cms.double( 0.9 ),
-            vertexSize = cms.double( 0.15 ),
-            zmerge = cms.double( 0.01 ),
-        ),
-        algorithm = cms.string( "DA_vect" ),
+    vertexCollections = cms.VPSet( 
+      cms.PSet(  chi2cutoff = cms.double( 3.0 ),
+        label = cms.string( "" ),
+        useBeamConstraint = cms.bool( False ),
+        minNdof = cms.double( 0.0 ),
+        maxDistanceToBeam = cms.double( 1.0 ),
+        algorithm = cms.string( "AdaptiveVertexFitter" )
+      ),
+      cms.PSet(  chi2cutoff = cms.double( 3.0 ),
+        label = cms.string( "WithBS" ),
+        useBeamConstraint = cms.bool( True ),
+        minNdof = cms.double( 0.0 ),
+        maxDistanceToBeam = cms.double( 1.0 ),
+        algorithm = cms.string( "AdaptiveVertexFitter" )
+      )
     ),
-    TkFilterParameters = cms.PSet(
-        algorithm = cms.string( "filter" ),
-        maxD0Significance = cms.double( 999 ),
-        maxEta = cms.double( 100 ),
-        maxNormalizedChi2 = cms.double( 20 ),
-        minPixelLayersWithHits = cms.int32( 2 ),
-        minPt = cms.double( 0 ),
-        minSiliconLayersWithHits = cms.int32( 5 ),
-        trackQuality = cms.string( "any" ),
+    verbose = cms.untracked.bool( False ),
+    TkFilterParameters = cms.PSet( 
+      maxEta = cms.double( 100.0 ),
+      minPt = cms.double( 0.0 ),
+      minSiliconLayersWithHits = cms.int32( 5 ),
+      minPixelLayersWithHits = cms.int32( 2 ),
+      maxNormalizedChi2 = cms.double( 20.0 ),
+      trackQuality = cms.string( "any" ),
+      algorithm = cms.string( "filter" ),
+      maxD0Significance = cms.double( 999.0 )
     ),
+    beamSpotLabel = cms.InputTag( "hltOnlineBeamSpot" ),
     TrackLabel = cms.InputTag( "scoutingTrackReco" ),
     TrackTimeResosLabel = cms.InputTag( "dummy_default" ),
     TrackTimesLabel = cms.InputTag( "dummy_default" ),
-    beamSpotLabel = cms.InputTag( "hltOnlineBeamSpot" ),
-    isRecoveryIteration = cms.bool( False ),
-    minTrackTimeQuality = cms.double( 0.8 ),
-    recoveryVtxCollection = cms.InputTag( "" ),
     trackMTDTimeQualityVMapTag = cms.InputTag( "dummy_default" ),
-    useMVACut = cms.bool( False ),
-    verbose = cms.untracked.bool( False ),
-    vertexCollections = cms.VPSet(
-        cms.PSet(
-            algorithm = cms.string( "AdaptiveVertexFitter" ),
-            chi2cutoff = cms.double( 3 ),
-            label = cms.string( "" ),
-            maxDistanceToBeam = cms.double( 1 ),
-            minNdof = cms.double( 0 ),
-            useBeamConstraint = cms.bool( False ),
-        ),
-        cms.PSet(
-            algorithm = cms.string( "AdaptiveVertexFitter" ),
-            chi2cutoff = cms.double( 3 ),
-            label = cms.string( "WithBS" ),
-            maxDistanceToBeam = cms.double( 1 ),
-            minNdof = cms.double( 0 ),
-            useBeamConstraint = cms.bool( True ),
-        ),
+    TkClusParameters = cms.PSet( 
+      TkDAClusParameters = cms.PSet( 
+        zmerge = cms.double( 0.01 ),
+        Tstop = cms.double( 0.5 ),
+        d0CutOff = cms.double( 999.0 ),
+        dzCutOff = cms.double( 4.0 ),
+        vertexSize = cms.double( 0.15 ),
+        coolingFactor = cms.double( 0.6 ),
+        Tpurge = cms.double( 2.0 ),
+        Tmin = cms.double( 2.4 ),
+        uniquetrkweight = cms.double( 0.9 )
+      ),
+      algorithm = cms.string( "DA_vect" )
     ),
+    isRecoveryIteration = cms.bool( False ),
+    recoveryVtxCollection = cms.InputTag( "" ),
+    useMVACut = cms.bool( False ),
+    minTrackTimeQuality = cms.double( 0.8 )
 )
 
+hltVerticesPFSelector = cms.EDFilter( "PrimaryVertexObjectFilter",
+    filterParams = cms.PSet( 
+      maxZ = cms.double( 24.0 ),
+      minNdof = cms.double( 4.0 ),
+      maxRho = cms.double( 2.0 ),
+      pvSrc = cms.InputTag( "hltVerticesPF" )
+    ),
+    src = cms.InputTag( "hltVerticesPF" )
+)
+
+hltVerticesPFFilter = cms.EDFilter( "VertexSelector",
+    src = cms.InputTag( "hltVerticesPFSelector" ),
+    cut = cms.string( "!isFake" ),
+    filter = cms.bool( True )
+)
+
+hltDeepInclusiveVertexFinderPF = cms.EDProducer( "InclusiveCandidateVertexFinder",
+    beamSpot = cms.InputTag( "hltOnlineBeamSpot" ),
+    primaryVertices = cms.InputTag( "hltVerticesPFFilter" ),
+    tracks = cms.InputTag( "scoutingPFCandidate" ),
+    minHits = cms.uint32( 8 ),
+    maximumLongitudinalImpactParameter = cms.double( 0.3 ),
+    maximumTimeSignificance = cms.double( 3.0 ),
+    minPt = cms.double( 0.8 ),
+    maxNTracks = cms.uint32( 30 ),
+    clusterizer = cms.PSet(
+      distanceRatio = cms.double( 20.0 ),
+      clusterMaxDistance = cms.double( 0.05 ),
+      seedMax3DIPSignificance = cms.double( 9999.0 ),
+      clusterMaxSignificance = cms.double( 4.5 ),
+      seedMin3DIPSignificance = cms.double( 1.2 ),
+      clusterMinAngleCosine = cms.double( 0.5 ),
+      seedMin3DIPValue = cms.double( 0.005 ),
+      seedMax3DIPValue = cms.double( 9999.0 )
+    ),
+    vertexMinAngleCosine = cms.double( 0.95 ),
+    vertexMinDLen2DSig = cms.double( 2.5 ),
+    vertexMinDLenSig = cms.double( 0.5 ),
+    fitterSigmacut = cms.double( 3.0 ),
+    fitterTini = cms.double( 256.0 ),
+    fitterRatio = cms.double( 0.25 ),
+    useDirectVertexFitter = cms.bool( True ),
+    useVertexReco = cms.bool( True ),
+    vertexReco = cms.PSet(
+      primcut = cms.double( 1.0 ),
+      seccut = cms.double( 3.0 ),
+      finder = cms.string( "avr" ),
+      smoothing = cms.bool( True )
+    )
+)
+
+hltDeepInclusiveSecondaryVerticesPF = cms.EDProducer( "CandidateVertexMerger",
+    secondaryVertices = cms.InputTag( "hltDeepInclusiveVertexFinderPF" ),
+    maxFraction = cms.double( 0.7 ),
+    minSignificance = cms.double( 2.0 )
+)
+
+hltDeepTrackVertexArbitratorPF = cms.EDProducer( "CandidateVertexArbitrator",
+    beamSpot = cms.InputTag( "hltOnlineBeamSpot" ),
+    primaryVertices = cms.InputTag( "hltVerticesPFFilter" ),
+    tracks = cms.InputTag( "scoutingPFCandidate" ),
+    secondaryVertices = cms.InputTag( "hltDeepInclusiveSecondaryVerticesPF" ),
+    dLenFraction = cms.double( 0.333 ),
+    dRCut = cms.double( 0.4 ),
+    distCut = cms.double( 0.04 ),
+    sigCut = cms.double( 5.0 ),
+    fitterSigmacut = cms.double( 3.0 ),
+    fitterTini = cms.double( 256.0 ),
+    fitterRatio = cms.double( 0.25 ),
+    trackMinLayers = cms.int32( 4 ),
+    trackMinPt = cms.double( 0.4 ),
+    trackMinPixels = cms.int32( 1 ),
+    maxTimeSignificance = cms.double( 3.5 )
+)
+
+hltDeepInclusiveMergedVerticesPF = cms.EDProducer( "CandidateVertexMerger",
+    secondaryVertices = cms.InputTag( "hltDeepTrackVertexArbitratorPF" ),
+    maxFraction = cms.double( 0.2 ),
+    minSignificance = cms.double( 10.0 )
+)
+
+from PhysicsTools.NanoAOD.simpleSecondaryVertexFlatTableProducer_cfi import simpleSecondaryVertexFlatTableProducer
+scoutingSecondaryVertexTable = simpleSecondaryVertexFlatTableProducer.clone(
+    src = cms.InputTag("hltDeepInclusiveMergedVerticesPF"),
+    name = cms.string("ScoutingSV"),
+    extension = cms.bool(False),
+    variables = cms.PSet(P4Vars,
+        x   = Var("position().x()", float, doc = "secondary vertex X position, in cm",precision=10),
+        y   = Var("position().y()", float, doc = "secondary vertex Y position, in cm",precision=10),
+        z   = Var("position().z()", float, doc = "secondary vertex Z position, in cm",precision=14),
+        ndof    = Var("vertexNdof()", float, doc = "number of degrees of freedom",precision=8),
+        chi2    = Var("vertexNormalizedChi2()", float, doc = "reduced chi2, i.e. chi/ndof",precision=8),
+        ntracks = Var("numberOfDaughters()", "uint8", doc = "number of tracks"),
+    ),
+)
 
 ###############
 # Jet Tagging #
@@ -1016,7 +1111,8 @@ offlinePFCandidateTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
 # Closest to ScoutingPFJet since no pileup mitigation is applied at HLT
 # Standard Nano and JMENano no longer contain PFJet without any pileup mitigation
 offlinePFJet = ak4PFJets.clone(
-    src = "packedPFCandidates"
+    src = "packedPFCandidates",
+    jetPtMin = 20,
 )
 
 offlinePFJetTable = scoutingPFJetReclusterTable.clone(
