@@ -9,6 +9,8 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Ref.h"
 #include "DataFormats/Common/interface/RefToBase.h"
+#include "DataFormats/Common/interface/ValueMap.h"
+#include "DataFormats/Common/interface/OrphanHandle.h"
 #include "FWCore/Framework/interface/global/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -33,6 +35,7 @@ namespace reco {
   private:
     const edm::EDGetTokenT<JetCollection> mInput;
     const std::vector<edm::EDGetTokenT<reco::JetCorrector> > mCorrectorTokens;
+    const bool mSaveJECFactor;
     const bool mVerbose;
   };
 }  // namespace reco
@@ -47,12 +50,17 @@ namespace reco {
         mCorrectorTokens(
             edm::vector_transform(fConfig.getParameter<std::vector<edm::InputTag> >("correctors"),
                                   [this](edm::InputTag const& tag) { return consumes<reco::JetCorrector>(tag); })),
+        mSaveJECFactor(fConfig.getUntrackedParameter<bool>("saveJECFactor", false)),
         mVerbose(fConfig.getUntrackedParameter<bool>("verbose", false)) {
     std::string alias = fConfig.getUntrackedParameter<std::string>("alias", "");
     if (alias.empty())
       produces<JetCollection>();
     else
       produces<JetCollection>().setBranchAlias(alias);
+
+    if (mSaveJECFactor) {
+      produces<edm::ValueMap<double>>("jecFactor");
+    }
   }
 
   template <class T>
@@ -70,11 +78,13 @@ namespace reco {
     fEvent.getByToken(mInput, jets);                           //Get Inputs
     std::unique_ptr<JetCollection> result(new JetCollection);  //Corrected jets
     typename JetCollection::const_iterator jet;
+    std::unique_ptr<std::vector<double>> jecFactorCollection(new std::vector<double>); // jecFactors
     for (jet = jets->begin(); jet != jets->end(); jet++) {
       const T* referenceJet = &*jet;
       int index = jet - jets->begin();
       edm::RefToBase<reco::Jet> jetRef(edm::Ref<JetCollection>(jets, index));
       T correctedJet = *jet;  //copy original jet
+      double jecFactor = 1.;
       if (mVerbose)
         std::cout << "CorrectedJetProducer::produce-> original jet: " << jet->print() << std::endl;
       for (unsigned i = 0; i < mCorrectorTokens.size(); ++i) {
@@ -90,6 +100,7 @@ namespace reco {
                       << std::endl;
           correctedJet.scaleEnergy(scale);  // apply scalar correction
           referenceJet = &correctedJet;
+          jecFactor *= scale;
         } else {
           // Vectorial correction
           reco::JetCorrector::LorentzVector corrected;
@@ -104,12 +115,21 @@ namespace reco {
       if (mVerbose)
         std::cout << "CorrectedJetProducer::produce-> corrected jet: " << correctedJet.print() << std::endl;
       result->push_back(correctedJet);
+      jecFactorCollection->push_back(jecFactor);
     }
     NumericSafeGreaterByPt<T> compJets;
     // reorder corrected jets
     std::sort(result->begin(), result->end(), compJets);
     // put corrected jet collection into event
     fEvent.put(std::move(result));
+    // put jecFactor into event
+    if (mSaveJECFactor){
+      std::unique_ptr<edm::ValueMap<double>> jecFactor_VM(new edm::ValueMap<double>());
+      edm::ValueMap<double>::Filler filler_jecFactor(*jecFactor_VM);
+      filler_jecFactor.insert(jets, jecFactorCollection->begin(), jecFactorCollection->end());
+      filler_jecFactor.fill();
+      fEvent.put(std::move(jecFactor_VM), "jecFactor");
+    }
   }
 
 }  // namespace reco
