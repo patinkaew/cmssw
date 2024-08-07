@@ -32,12 +32,15 @@ autoNANO = {
     'L1' : {'customize': 'nanoL1TrigObjCustomize'},
     'L1FULL' : {'customize': 'nanoL1TrigObjCustomizeFull'},
     #scouting nano
-    'Scout' : {'sequence': 'PhysicsTools/NanoAOD/custom_run3scouting_cff'},
+    'Scout' : {'sequence': 'PhysicsTools/NanoAOD/custom_run3scouting_cff.scoutingNanoSequence',
+               'customize': 'PhysicsTools/NanoAOD/custom_run3scouting_cff.customiseScoutingNanoAOD'},
+    'ScoutPF' : {'sequence': '@Scout',
+                 'customize': 'PhysicsTools/NanoAOD/custom_run3scouting_cff.customiseScoutingPFNanoAOD'},
+    'ScoutFull' : {'sequence': '@Scout',
+                   'customize': 'PhysicsTools/NanoAOD/custom_run3scouting_cff.customiseScoutingFullNanoAOD'},
     # JME custom NANO
     'JME' : { 'sequence': '@PHYS',
                'customize': '@PHYS+PhysicsTools/NanoAOD/custom_jme_cff.PrepJMECustomNanoAOD'},
-    'JMErePuppi' : { 'sequence': '@PHYS',
-                     'customize': '@PHYS+@JME+PhysicsTools/NanoAOD/custom_jme_cff.RecomputePuppiWeightsAndMET'},
     # Muon POG flavours : add tables through customize, supposed to be combined with PHYS
     'MUPOG' : { 'sequence': '@PHYS',
                 'customize' : '@PHYS+PhysicsTools/NanoAOD/custom_muon_cff.PrepMuonCustomNanoAOD'},

@@ -2,65 +2,19 @@ import FWCore.ParameterSet.Config as cms
 from  PhysicsTools.NanoAOD.common_cff import *
 from PhysicsTools.NanoAOD.simpleCandidateFlatTableProducer_cfi import simpleCandidateFlatTableProducer
 
-################
-# Scouting photons, electrons, muons, tracks, primary vertices, displaced vertices, rho and MET
+#####################################
+##### Scouting Original Objects #####
+#####################################
+# this section describes flat tables "dump" faithfully from Run3Scouting* formats
 
-photonScoutingTable = cms.EDProducer("SimpleRun3ScoutingPhotonFlatTableProducer",
-     src = cms.InputTag("hltScoutingEgammaPacker"),
-     cut = cms.string(""),
-     name = cms.string("ScoutingPhoton"),
-     doc  = cms.string("Photon scouting information"),
-     singleton = cms.bool(False),
-     extension = cms.bool(False),
-     variables = cms.PSet(
-         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
-         eta = Var('eta', 'float', precision=10, doc='SC eta'),
-         phi = Var('phi', 'float', precision=10, doc='SC phi'),
-         m = Var('m', 'float', precision=10, doc='SC mass'),
-         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
-         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
-         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
-         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
-         r9 = Var('r9', 'float', precision=10, doc='Photon SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
-         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
-         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
-         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
-     )
-)
+# Scouting Muon
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingMuon.h
 
-electronScoutingTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProducer",
-     src = cms.InputTag("hltScoutingEgammaPacker"),
-     cut = cms.string(""),
-     name = cms.string("ScoutingElectron"),
-     doc  = cms.string("Electron scouting information"),
-     singleton = cms.bool(False),
-     extension = cms.bool(False),
-     variables = cms.PSet(
-         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
-         eta = Var('eta', 'float', precision=10, doc='SC eta'),
-         phi = Var('phi', 'float', precision=10, doc='SC phi'),
-         m = Var('m', 'float', precision=10, doc='SC mass'),
-         dEtaIn = Var('dEtaIn', 'float', precision=10, doc='#Delta#eta(SC seed, track pixel seed)'),
-         dPhiIn = Var('dPhiIn', 'float', precision=10, doc='#Delta#phi(SC seed, track pixel seed)'),
-         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
-         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
-         ooEMOop = Var('ooEMOop', 'float', precision=10, doc='1/E(SC) - 1/p(track momentum)'),
-         missingHits = Var('missingHits', 'int', doc='missing hits in the tracker'),
-         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
-         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
-         trackIso = Var('trackIso', 'float', precision=10, doc='Isolation of electron track in the tracker'),
-         r9 = Var('r9', 'float', precision=10, doc='ELectron SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
-         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
-         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
-         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
-     )
-)
-
-muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
+scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
      src = cms.InputTag("hltScoutingMuonPacker"),
      cut = cms.string(""),
      name = cms.string("ScoutingMuon"),
-     doc  = cms.string("Muon scouting information"),
+     doc  = cms.string("Scouting Muon"),
      singleton = cms.bool(False),
      extension = cms.bool(False),
      variables = cms.PSet(
@@ -118,14 +72,157 @@ muonScoutingTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
          trk_vx = Var('trk_vx', 'float', precision=10, doc='track vx'),
          trk_vy = Var('trk_vy', 'float', precision=10, doc='track vy'),
          trk_vz = Var('trk_vz', 'float', precision=10, doc='track vz'),
+
+         # additional parameters for array fields
+         nVertex = Var('vtxIndx().size()', "uint", doc="number of associated vertices"),
+         trk_hitPattern_hitCount = Var('trk_hitPattern().hitCount', 'uint8', doc='number of associated vertices'),
+         trk_hitPattern_beginTrackHits = Var('trk_hitPattern().beginTrackHits', "uint8", doc="track hit pattern begin track hit"),
+         trk_hitPattern_endTrackHits = Var('trk_hitPattern().endTrackHits', "uint8", doc="track hit pattern end track hit"),
+         trk_hitPattern_beginInner = Var('trk_hitPattern().beginInner', "uint8", doc="track hit pattern begin inner"),
+         trk_hitPattern_endInner = Var('trk_hitPattern().endInner', "uint8", doc="track hit pattern end inner"),
+         trk_hitPattern_beginOuter = Var('trk_hitPattern().beginOuter', "uint8", doc="track hit pattern begin outer"),
+         trk_hitPattern_endOuter = Var('trk_hitPattern().endOuter', "uint8", doc="track hit pattern end outer"),
+         nTrackHitPattern = Var('trk_hitPattern().hitPattern.size()', "uint", doc="number of associated hit patterns"),
      )
 )
 
-trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
+#TODO: replace this with SimpleArrayFlatTableProducer
+
+scoutingMuonArrayTable = cms.EDProducer("Run3ScoutingMuonArrayTableProducer",
+    src = cms.InputTag("hltScoutingMuonPackerVtx"),
+    vertex_index_collection_name = cms.string("ScoutingMuonVertexIndex"),
+    hit_pattern_collection_name = cms.string("ScoutingMuonTrackHitPattern"),
+)
+
+#scoutingMuonVertexIndexTable = cms.EDProducer
+
+#scoutingMuonTrackHitPatternTable = cms.EDProducer
+
+# Scouting Displaced Vertex (Muon)
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingVertex.h
+
+scoutingMuonDisplacedVertexTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
+     src = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingMuonDisplacedVertex"),
+     doc  = cms.string("Scouting Muon Displaced Vertex"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         x = Var('x', 'float', precision=10, doc='position x coordinate'),
+         y = Var('y', 'float', precision=10, doc='position y coordinate'),
+         z = Var('z', 'float', precision=10, doc='position z coordinate'),
+         xError = Var('xError', 'float', precision=10, doc='x error'),
+         yError = Var('yError', 'float', precision=10, doc='y error'),
+         zError = Var('zError', 'float', precision=10, doc='z error'),
+         tracksSize = Var('tracksSize', 'int', doc='number of tracks'),
+         chi2 = Var('chi2', 'float', precision=10, doc='chi squared'),
+         ndof = Var('ndof', 'int', doc='number of degrees of freedom'),
+         isValidVtx = Var('isValidVtx', 'bool', doc='is valid'),
+     )
+)
+
+
+# from 2024, there are two scouting muon collections
+
+# muonVtx
+scoutingMuonVtxTable = scoutingMuonTable.clone(
+    src = cms.InputTag("hltScoutingMuonPackerVtx"),
+    name = cms.string("ScoutingMuonVtx"),
+    doc  = cms.string("Scouting Muon Vtx"),
+)
+scoutingMuonVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
+    src = cms.InputTag("hltScoutingMuonPackerVtx", "displacedVtx"),
+    name = cms.string("ScoutingMuonVtxDisplacedVertex"),
+    doc  = cms.string("Scouting Muon Vtx DisplacedVertex"),
+)
+
+# muonNoVtx
+scoutingMuonNoVtxTable = scoutingMuonTable.clone(
+    src = cms.InputTag("hltScoutingMuonPackerNoVtx"),
+    name = cms.string("ScoutingMuonNoVtx"),
+    doc  = cms.string("Scouting Muon NoVtx information"),
+)
+scoutingMuonNoVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
+    src = cms.InputTag("hltScoutingMuonPackerNoVtx", "displacedVtx"),
+    name = cms.string("ScoutingMuonNoVtxDisplacedVertex"),
+    doc  = cms.string("Scouting Muon NoVtx DisplacedVertex information"),
+)
+
+# Scouting Electron
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingElectron.h
+
+scoutingElectronArrayTable = cms.EDProducer("Run3ScoutingElectronArrayTableProducer",
+    src = cms.InputTag("hltScoutingEgammaPacker"),
+    track_collection_name = cms.string("ScoutingElectronTrack"),
+)
+
+scoutingElectronTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProducer",
+     src = cms.InputTag("hltScoutingEgammaPacker"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingElectron"),
+     doc  = cms.string("Scouting Electron"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
+         eta = Var('eta', 'float', precision=10, doc='SC eta'),
+         phi = Var('phi', 'float', precision=10, doc='SC phi'),
+         m = Var('m', 'float', precision=10, doc='SC mass'),
+         dEtaIn = Var('dEtaIn', 'float', precision=10, doc='#Delta#eta(SC seed, track pixel seed)'),
+         dPhiIn = Var('dPhiIn', 'float', precision=10, doc='#Delta#phi(SC seed, track pixel seed)'),
+         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
+         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
+         ooEMOop = Var('ooEMOop', 'float', precision=10, doc='1/E(SC) - 1/p(track momentum)'),
+         missingHits = Var('missingHits', 'int', doc='missing hits in the tracker'),
+         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
+         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
+         trackIso = Var('trackIso', 'float', precision=10, doc='Isolation of electron track in the tracker'),
+         r9 = Var('r9', 'float', precision=10, doc='ELectron SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
+         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
+         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
+         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
+
+         # additional parameters for array fields
+         nTrack = Var('trkd0().size()', "uint", doc="number of associated tracks"),
+     )
+)
+
+# Scouting Photon
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingPhoton.h 
+
+scoutingPhotonTable = cms.EDProducer("SimpleRun3ScoutingPhotonFlatTableProducer",
+     src = cms.InputTag("hltScoutingEgammaPacker"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingPhoton"),
+     doc  = cms.string("Scouting Photon"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         pt = Var('pt', 'float', precision=10, doc='super-cluster (SC) pt'),
+         eta = Var('eta', 'float', precision=10, doc='SC eta'),
+         phi = Var('phi', 'float', precision=10, doc='SC phi'),
+         m = Var('m', 'float', precision=10, doc='SC mass'),
+         sigmaIetaIeta = Var('sigmaIetaIeta', 'float', precision=10, doc='sigmaIetaIeta of the SC, calculated with full 5x5 region, noise cleaned'),
+         hOverE = Var('hOverE', 'float', precision=10, doc='Energy in HCAL / Energy in ECAL'),
+         ecalIso = Var('ecalIso', 'float', precision=10, doc='Isolation of SC in the ECAL'),
+         hcalIso = Var('hcalIso', 'float', precision=10, doc='Isolation of SC in the HCAL'),
+         trkIso = Var('trkIso', 'float', precision=10, doc='Isolation of track in the tracker'),
+         r9 = Var('r9', 'float', precision=10, doc='Photon SC r9 as defined in https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEgammaShowerShape'),
+         sMin = Var('sMin', 'float', precision=10, doc='minor moment of the SC shower shape'),
+         sMaj = Var('sMaj', 'float', precision=10, doc='major moment of the SC shower shape'),
+         seedId = Var('seedId', 'int', doc='ECAL ID of the SC seed'),
+     )
+)
+
+# Scouting Track
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingTrack.h
+
+scoutingTrackTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
      src = cms.InputTag("hltScoutingTrackPacker"),
      cut = cms.string(""),
      name = cms.string("ScoutingTrack"),
-     doc  = cms.string("Track scouting information"),
+     doc  = cms.string("Scouting Track"),
      singleton = cms.bool(False),
      extension = cms.bool(False),
      variables = cms.PSet(
@@ -141,7 +238,7 @@ trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
          nValidStripHits = Var('tk_nValidStripHits', 'int', doc='number of valid strip hits'),
          nTrackerLayersWithMeasurement = Var('tk_nTrackerLayersWithMeasurement', 'int', doc='number of tracker layers with measurements'),
          qoverp = Var('tk_qoverp', 'float', precision=10, doc='qoverp'),
-         _lambda = Var('tk_lambda', 'float', precision=10, doc='lambda'),
+         lambda_ = Var('tk_lambda', 'float', precision=10, doc='lambda'),
          dxyError = Var('tk_dxy_Error', 'float', precision=10, doc='dxyError'),
          dzError = Var('tk_dz_Error', 'float', precision=10, doc='dzError'),
          qoverpError = Var('tk_qoverp_Error', 'float', precision=10, doc='qoverpError'),
@@ -166,11 +263,14 @@ trackScoutingTable = cms.EDProducer("SimpleRun3ScoutingTrackFlatTableProducer",
      )
 )
 
-primaryvertexScoutingTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
+# Scouting Primary Vertex
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingVertex.h 
+
+scoutingPrimaryVertexTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
      src = cms.InputTag("hltScoutingPrimaryVertexPacker", "primaryVtx"),
      cut = cms.string(""),
      name = cms.string("ScoutingPrimaryVertex"),
-     doc  = cms.string("PrimaryVertex scouting information"),
+     doc  = cms.string("Scouting Primary Vertex"),
      singleton = cms.bool(False),
      extension = cms.bool(False),
      variables = cms.PSet(
@@ -187,35 +287,75 @@ primaryvertexScoutingTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTablePr
      )
 )
 
-displacedvertexScoutingTable = cms.EDProducer("SimpleRun3ScoutingVertexFlatTableProducer",
-     src = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
-     cut = cms.string(""),
-     name = cms.string("ScoutingDisplacedVertex"),
-     doc  = cms.string("DisplacedVertex scouting information"),
-     singleton = cms.bool(False),
-     extension = cms.bool(False),
-     variables = cms.PSet(
-         x = Var('x', 'float', precision=10, doc='position x coordinate'),
-         y = Var('y', 'float', precision=10, doc='position y coordinate'),
-         z = Var('z', 'float', precision=10, doc='position z coordinate'),
-         xError = Var('xError', 'float', precision=10, doc='x error'),
-         yError = Var('yError', 'float', precision=10, doc='y error'),
-         zError = Var('zError', 'float', precision=10, doc='z error'),
-         tracksSize = Var('tracksSize', 'int', doc='number of tracks'),
-         chi2 = Var('chi2', 'float', precision=10, doc='chi squared'),
-         ndof = Var('ndof', 'int', doc='number of degrees of freedom'),
-         isValidVtx = Var('isValidVtx', 'bool', doc='is valid'),
-     )
-)
+# Scouting Particle
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingParticle.h
 
-rhoScoutingTable = cms.EDProducer("GlobalVariablesTableProducer",
-    name = cms.string(""),
+scoutingParticleTable = cms.EDProducer("SimpleRun3ScoutingParticleFlatTableProducer",
+    src = cms.InputTag("hltScoutingPFPacker"),
+    name = cms.string("ScoutingParticle"),
+    cut = cms.string(""),
+    doc = cms.string("Scouting Particle"),
+    singleton = cms.bool(False),
+    extension = cms.bool(False), # this is the main table
     variables = cms.PSet(
-        ScoutingRho = ExtVar( cms.InputTag("hltScoutingPFPacker", "rho"), "double", doc = "rho from all scouting PF Candidates, used e.g. for JECs" ),
-    )
+        P3Vars,
+        pdgId = Var("pdgId", int, doc="PDG code assigned by the event reconstruction (not by MC truth)"),
+        vertex = Var("vertex()", int, doc="vertex index"),
+        normchi2 = Var("normchi2()", float, doc="normalized chi squared of best track"),
+        dz = Var("dz()", float, doc="dz of best track"),
+        dxy = Var("dxy()", float, doc="dxy of best track"),
+        dzsig = Var("dzsig()", float, doc="dzsig of best track"),
+        dxysig = Var("dxysig()", float, doc="dxysig of best track"),
+        lostInnerHits = Var("lostInnerHits()", "uint8", doc="lostInnerHits of best track"),
+        quality = Var("quality()", "uint8", doc="quality of best track"),
+        trk_pt = Var("trk_pt()", "float", doc="pt of best track"),
+        trk_eta = Var("trk_eta()", "float", doc="eta of best track"),
+        trk_phi = Var("trk_phi()", "float", doc="phi of best track"),
+        relative_trk_vars = Var("relative_trk_vars()", "bool", doc="relative_trk_vars"),
+    ),
 )
 
-metScoutingTable = cms.EDProducer("GlobalVariablesTableProducer",
+
+# Scouting PFJet
+# https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingPFJet.h
+
+scoutingPFJetTable = cms.EDProducer("SimpleRun3ScoutingPFJetFlatTableProducer",
+     src = cms.InputTag("hltScoutingPFPacker"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingPFJet"),
+     doc  = cms.string("Scouting PFJet"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         P3Vars,
+         #pt = Var('pt', 'float', precision=10, doc='TODO'),
+         #eta = Var('eta', 'float', precision=10, doc='TODO'),
+         #phi = Var('phi', 'float', precision=10, doc='TODO'),
+         m = Var('m', 'float', precision=10, doc='mass'),
+         jetArea = Var('jetArea', 'float', precision=10, doc='jet area'),
+         chargedHadronEnergy = Var('chargedHadronEnergy', 'float', precision=10, doc='charged hadron energy'),
+         neutralHadronEnergy = Var('neutralHadronEnergy', 'float', precision=10, doc='neutral hadron energy'),
+         photonEnergy = Var('photonEnergy', 'float', precision=10, doc='photon energy'),
+         electronEnergy = Var('electronEnergy', 'float', precision=10, doc='electron energy'),
+         muonEnergy = Var('muonEnergy', 'float', precision=10, doc='muon energy'),
+         HFHadronEnergy = Var('HFHadronEnergy', 'float', precision=10, doc='hadronic energy in HF'),
+         HFEMEnergy = Var('HFEMEnergy', 'float', precision=10, doc='electromagnetic energy in HF'),
+         chargedHadronMultiplicity = Var('chargedHadronMultiplicity', 'int', doc='number of charged hadrons in the jet'),
+         neutralHadronMultiplicity = Var('neutralHadronMultiplicity', 'int', doc='number of neutral hadrons in the jet'),
+         photonMultiplicity = Var('photonMultiplicity', 'int', doc='number of photons in the jet'),
+         electronMultiplicity = Var('electronMultiplicity', 'int', doc='number of electrons in the jet'),
+         muonMultiplicity = Var('muonMultiplicity', 'int', doc='number of muons in the jet'),
+         HFHadronMultiplicity = Var('HFHadronMultiplicity', 'int', doc='number of hadronic particles in the jet in HF'),
+         HFEMMultiplicity = Var('HFEMMultiplicity', 'int', doc='number of electromagnetic particles in the jet in HF'),
+         HOEnergy = Var('HOEnergy', 'float', precision=10, doc='hadronic energy in HO'),
+         #csv = Var('csv', 'float', precision=10, doc='CSV'),
+         #mvaDiscriminator = Var('mvaDiscriminator', 'float', precision=10, doc='MVA Discriminator'),
+         #constituents = Var('constituents', 'int', doc='indices of PF candidates in the jet')
+     )
+)
+
+# Scouting MET
+scoutingMETTable = cms.EDProducer("GlobalVariablesTableProducer",
     name = cms.string("ScoutingMET"),
     variables = cms.PSet(
         pt = ExtVar( cms.InputTag("hltScoutingPFPacker", "pfMetPt"), "double", doc = "scouting MET pt"),
@@ -223,49 +363,534 @@ metScoutingTable = cms.EDProducer("GlobalVariablesTableProducer",
     )
 )
 
-################
-# Scouting particles
-
-scoutingPFCands = cms.EDProducer(
-     "Run3ScoutingParticleToRecoPFCandidateProducer",
-     scoutingparticle=cms.InputTag("hltScoutingPFPacker"),
+# Scouting Rho
+scoutingRhoTable = cms.EDProducer("GlobalVariablesTableProducer",
+    name = cms.string("ScoutingRho"),
+    variables = cms.PSet(
+        fixedGridRhoFastjetAll = ExtVar(cms.InputTag("hltScoutingPFPacker", "rho"), "double", doc = "rho from all scouting PF Candidates, used e.g. for JECs" ),
+    )
 )
 
-particleScoutingTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
-    src = cms.InputTag("scoutingPFCands"),
-    name = cms.string("ScoutingParticle"),
+####################################
+##### Scouting Derived Objects #####
+####################################
+
+# Scouting PF Candidate
+# translation from Run3ScoutingParticle to reco::PFCandidate
+# used as input for standard algorithm, e.g. jet clustering
+
+scoutingPFCandidate = cms.EDProducer("Run3ScoutingParticleToRecoPFCandidateProducer",
+     scoutingparticle = cms.InputTag("hltScoutingPFPacker"),
+     CHS = cms.bool(False),
+)
+
+scoutingPFCandidateTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src = cms.InputTag("scoutingPFCandidate"),
+    name = cms.string("ScoutingPFCandidate"),
     cut = cms.string(""),
-    doc = cms.string("ScoutingParticle"),
+    doc = cms.string("Scouting Candidate"),
     singleton = cms.bool(False),
     extension = cms.bool(False), # this is the main table
     externalVariables = cms.PSet(
-       vertexIndex = ExtVar(cms.InputTag("scoutingPFCands", "vertexIndex"), int, doc="vertex index"),
-       trkNormchi2 = ExtVar(cms.InputTag("scoutingPFCands", "normchi2"), float, doc="normalized chi squared of best track", precision=6),
-       trkDz = ExtVar(cms.InputTag("scoutingPFCands", "dz"), float, doc="dz of best track", precision=6),
-       trkDxy = ExtVar(cms.InputTag("scoutingPFCands", "dxy"), float, doc="dxy of best track", precision=6),
-       trkDzsig = ExtVar(cms.InputTag("scoutingPFCands", "dzsig"), float, doc="dzsig of best track", precision=6),
-       trkDxysig = ExtVar(cms.InputTag("scoutingPFCands", "dxysig"), float, doc="dxysig of best track", precision=6),
-       trkLostInnerHits = ExtVar(cms.InputTag("scoutingPFCands", "lostInnerHits"), int, doc="lostInnerHits of best track"),
-       trkQuality = ExtVar(cms.InputTag("scoutingPFCands", "quality"), int, doc="quality of best track"),
-       trkPt = ExtVar(cms.InputTag("scoutingPFCands", "trkPt"), float, doc="pt of best track", precision=6),
-       trkEta = ExtVar(cms.InputTag("scoutingPFCands", "trkEta"), float, doc="eta of best track", precision=6),
-       trkPhi = ExtVar(cms.InputTag("scoutingPFCands", "trkPhi"), float, doc="phi of best track", precision=6),
+       vertexIndex = ExtVar(cms.InputTag("scoutingPFCandidate", "vertexIndex"), int, doc="vertex index"),
+       trkNormchi2 = ExtVar(cms.InputTag("scoutingPFCandidate", "normchi2"), float, doc="normalized chi squared of best track", precision=6),
+       trkDz = ExtVar(cms.InputTag("scoutingPFCandidate", "dz"), float, doc="dz of best track", precision=6),
+       trkDxy = ExtVar(cms.InputTag("scoutingPFCandidate", "dxy"), float, doc="dxy of best track", precision=6),
+       trkDzsig = ExtVar(cms.InputTag("scoutingPFCandidate", "dzsig"), float, doc="dzsig of best track", precision=6),
+       trkDxysig = ExtVar(cms.InputTag("scoutingPFCandidate", "dxysig"), float, doc="dxysig of best track", precision=6),
+       trkLostInnerHits = ExtVar(cms.InputTag("scoutingPFCandidate", "lostInnerHits"), int, doc="lostInnerHits of best track"),
+       trkQuality = ExtVar(cms.InputTag("scoutingPFCandidate", "quality"), int, doc="quality of best track"),
+       trkPt = ExtVar(cms.InputTag("scoutingPFCandidate", "trkPt"), float, doc="pt of best track", precision=6),
+       trkEta = ExtVar(cms.InputTag("scoutingPFCandidate", "trkEta"), float, doc="eta of best track", precision=6),
+       trkPhi = ExtVar(cms.InputTag("scoutingPFCandidate", "trkPhi"), float, doc="phi of best track", precision=6),
     ),
     variables = cms.PSet(
        CandVars,
     ),
-  )
+)
 
-################
-# Scouting AK4 jets
+# Scouting PF Candidate with CHS applied
+# translation from Run3ScoutingParticle to reco::PFCandidate
+# used as input for standard algorithm, e.g. jet clustering
+
+scoutingPFCHSCandidate = cms.EDProducer("Run3ScoutingParticleToRecoPFCandidateProducer",
+        scoutingparticle = cms.InputTag("hltScoutingPFPacker"),
+        CHS = cms.bool(True),
+)
+
+#######################
+# JetMET Reclustering #
+#######################
+
+# Scouting Jet Reclustered
+# jets from reclustering PF candidates
 
 from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
-ak4ScoutingJets = ak4PFJets.clone(
-     src = ("scoutingPFCands"),
+scoutingPFJetRecluster = ak4PFJets.clone(
+     src = ("scoutingPFCandidate"),
      jetPtMin = 20,
 )
 
-ak4ScoutingJetParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProducer",
+scoutingPFJetReclusterTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+      src = cms.InputTag("scoutingPFJetRecluster"),
+      name = cms.string("ScoutingPFJetRecluster"),
+      cut = cms.string(""),
+      doc = cms.string("Jet from reclustering scouting PF candidates"),
+      singleton = cms.bool(False),
+      extension = cms.bool(False), # this is the main table
+      variables = cms.PSet(
+         P4Vars,
+         area = Var("jetArea()", float, doc="jet catchment area, for JECs",precision=10),
+         chHEF = Var("chargedHadronEnergyFraction()", float, doc="charged Hadron Energy Fraction", precision= 6),
+         neHEF = Var("neutralHadronEnergyFraction()", float, doc="neutral Hadron Energy Fraction", precision= 6),
+         chEmEF = Var("chargedEmEnergyFraction()", float, doc="charged Electromagnetic Energy Fraction", precision= 6),
+         neEmEF = Var("neutralEmEnergyFraction()", float, doc="neutral Electromagnetic Energy Fraction", precision= 6),
+         muEF = Var("muonEnergyFraction()", float, doc="muon Energy Fraction", precision= 6),
+         hfHEF = Var("HFHadronEnergyFraction()",float,doc="hadronic Energy Fraction in HF",precision= 6),
+         hfEmEF = Var("HFEMEnergyFraction()",float,doc="electromagnetic Energy Fraction in HF",precision= 6),
+         nCh = Var("chargedHadronMultiplicity()", int, doc="number of charged hadrons in the jet"),
+         nNh = Var("neutralHadronMultiplicity()", int, doc="number of neutral hadrons in the jet"),
+         nMuons = Var("muonMultiplicity()", int, doc="number of muons in the jet"),
+         nElectrons = Var("electronMultiplicity()", int, doc="number of electrons in the jet"),
+         nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
+         nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
+      ),
+)
+
+# Scouting PF MET Reclustered
+# FIXME: This misses all forward particles
+
+scoutingRawPFMETRecluster = cms.EDProducer("PFMETProducer",
+    src = cms.InputTag("scoutingPFCandidate"),
+    applyWeight = cms.bool(False),
+)
+
+scoutingRawPFMETReclusterTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src  = cms.InputTag("scoutingRawPFMETRecluster"),
+    name = cms.string("ScoutingRawPFMETRecluster"),
+    doc = cms.string("MET from reclustering scouting PF candidates"),
+    singleton = cms.bool(True),
+    variables = cms.PSet(PTVars,
+        sumEt = Var("sumEt()", float, doc="scalar sum of Et", precision=10),
+    )
+)
+
+# Scouting PFCHS Jet Reclustered
+
+scoutingCHSJetRecluster = ak4PFJets.clone(
+     src = ("scoutingPFCHSCandidate"),
+     jetPtMin = 20,
+)
+
+scoutingCHSJetReclusterTable = scoutingPFJetReclusterTable.clone(
+      src = cms.InputTag("scoutingCHSJetRecluster"),
+      name = cms.string("ScoutingCHSJetRecluster"),
+      cut = cms.string(""),
+      doc = cms.string("Jet from reclustering scouting PF candidates with CHS applied"),
+)
+
+# Scouting PFCHS FatJet Reclustered
+
+scoutingFatCHSJetRecluster = ak4PFJets.clone(
+     src = ("scoutingPFCHSCandidate"),
+     rParam   = 0.8,
+     jetPtMin = 170.0,
+)
+
+scoutingFatCHSJetReclusterTable = scoutingPFJetReclusterTable.clone(
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      name = cms.string("ScoutingFatCHSJetRecluster"),
+      cut = cms.string(""),
+      doc = cms.string("FatJet from reclustering scouting PF Candidates with CHS applied"),
+)
+
+# Scouting CHS MET Reclustered
+# FIXME: This misses all forward particles
+
+scoutingRawCHSMETRecluster = cms.EDProducer("PFMETProducer",
+    src = cms.InputTag("scoutingPFCHSCandidate"),
+    applyWeight = cms.bool(False),
+)
+
+scoutingRawCHSMETReclusterTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+    src  = cms.InputTag("scoutingRawCHSMETRecluster"),
+    name = cms.string("ScoutingRawCHSMETRecluster"),
+    doc = cms.string("MET from reclustering scouting PF candidates with CHS applied"),
+    singleton = cms.bool(True),
+    variables = cms.PSet(PTVars,
+        sumEt = Var("sumEt()", float, doc="scalar sum of Et", precision=10),
+    )
+)
+
+#########################
+# Jet Energy Correction #
+#########################
+
+# adapt from HLT menu
+
+hltAK4PFFastJetCorrector = cms.EDProducer("L1FastjetCorrectorProducer",
+    algorithm = cms.string("AK4PFHLT"),
+    level = cms.string("L1FastJet"),
+    srcRho = cms.InputTag("hltScoutingPFPacker", "rho")
+)
+
+hltAK4PFRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+    algorithm = cms.string( "AK4PFHLT" ),
+    level = cms.string( "L2Relative" )
+)
+
+hltAK4PFAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+    algorithm = cms.string( "AK4PFHLT" ),
+    level = cms.string( "L3Absolute" )
+)
+
+hltAK4PFResidualCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+    algorithm = cms.string( "AK4PFHLT" ),
+    level = cms.string( "L2L3Residual" )
+)
+
+hltAK4PFCorrector = cms.EDProducer("ChainedJetCorrectorProducer",
+    correctors = cms.VInputTag(["hltAK4PFFastJetCorrector", "hltAK4PFRelativeCorrector", "hltAK4PFAbsoluteCorrector", "hltAK4PFResidualCorrector" ])
+)
+
+# translation from Run3ScoutingPFJet to reco::PFJet
+# this is needed for applying JEC
+scoutingPFJetReco = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
+    src = cms.InputTag("hltScoutingPFPacker"),
+)
+
+scoutingPFJetCorrected = cms.EDProducer("CorrectedPFJetProducer",
+    correctors = cms.VInputTag(["hltAK4PFCorrector"]),
+    src = cms.InputTag("scoutingPFJetReco"),
+    saveJECFactor = cms.untracked.bool(True),
+)
+
+scoutingPFJetCorrectedTable = scoutingPFJetReclusterTable.clone(
+    src = cms.InputTag("scoutingPFJetReco"),
+    name = cms.string("ScoutingPFJet"),
+    cut = cms.string(""),
+    doc = cms.string("Scouting PFJet"),
+    externalVariables = cms.PSet(
+        jecFactor = ExtVar(cms.InputTag("scoutingPFJetCorrected", "jecFactor"), "double", doc="factor to get to corrected pT"),
+    ), 
+)
+
+scoutingPFJetReclusterCorrected = cms.EDProducer( "CorrectedPFJetProducer",
+    correctors = cms.VInputTag([ "hltAK4PFCorrector" ]),
+    src = cms.InputTag( "scoutingPFJetRecluster"),
+    saveJECFactor = cms.untracked.bool(True),
+)
+
+scoutingPFJetReclusterCorrectionExtensionTable = scoutingPFJetReclusterTable.clone(
+    extension = cms.bool(True),
+    externalVariables = cms.PSet(
+        jecFactor = ExtVar(cms.InputTag("scoutingPFJetReclusterCorrected", "jecFactor"), "double", doc="factor to get to corrected pT")
+    ),
+)
+
+####################
+# Gen Jet Matching #
+####################
+
+scoutingPFJetReclusterMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
+      src = cms.InputTag("scoutingPFJetRecluster"),
+      matched = cms.InputTag("slimmedGenJets"),
+      distMax = cms.double(0.4),
+      value = cms.string("index"),
+)
+
+scoutingPFJetReclusterMatchGenExtensionTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+      src = cms.InputTag("scoutingPFJetRecluster"),
+      name = cms.string("ScoutingPFJetRecluster"),
+      cut = cms.string(""),
+      singleton = cms.bool(False),
+      extension = cms.bool(True),
+      externalVariables = cms.PSet(
+         genJetIdx = ExtVar(cms.InputTag("scoutingPFJetReclusterMatchGen"), int, doc="gen jet idx"),
+      ),
+      variables = cms.PSet(),
+)
+
+scoutingCHSJetReclusterMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
+      src = cms.InputTag("scoutingCHSJetRecluster"),
+      matched = cms.InputTag("slimmedGenJets"),
+      distMax = cms.double(0.4),
+      value = cms.string("index"),
+)
+
+scoutingCHSJetReclusterMatchGenExtensionTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+      src = cms.InputTag("scoutingCHSJetRecluster"),
+      name = cms.string("ScoutingCHSJetRecluster"),
+      cut = cms.string(""),
+      singleton = cms.bool(False),
+      extension = cms.bool(True),
+      externalVariables = cms.PSet(
+         genJetIdx = ExtVar(cms.InputTag("scoutingPFJetReclusterMatchGen"), int, doc="gen jet idx"),
+      ),
+      variables = cms.PSet(),
+)
+
+scoutingFatCHSJetReclusterMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      matched = cms.InputTag("slimmedGenJetsAK8"),
+      distMax = cms.double(0.8),
+      value = cms.string("index"),
+)
+
+scoutingFatCHSJetReclusterMatchGenExtensionTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      name = cms.string("ScoutingFatCHSJetRecluster"),
+      cut = cms.string(""),
+      singleton = cms.bool(False),
+      extension = cms.bool(True),
+      externalVariables = cms.PSet(
+         genJetAK8Idx = ExtVar(cms.InputTag("scoutingFatCHSJetReclusterMatchGen"), int, doc="gen jet idx"),
+      ),
+      variables = cms.PSet(),
+)
+
+##################################
+# Jet - PF Candidate Association #
+##################################
+
+scoutingFatCHSJetReclusterConstituentIndex = cms.EDProducer("RecoJetConstituentIndexProducer",
+    jets = cms.InputTag("scoutingFatCHSJetRecluster"),
+    candidates = cms.InputTag("scoutingPFCHSCandidate"),
+)
+
+#scoutingFatCHSJetReclusterConstituentIndexTable = cms.EDProducer("SimpleCandidateArrayFlatTableProducer")
+
+#######################
+# Secondary Vertexing #
+#######################
+
+scoutingTrackReco = cms.EDProducer("Run3ScoutingTrackToRecoTrackProducer",
+    scoutingTrack = cms.InputTag("hltScoutingTrackPacker")
+)
+
+# for testing
+scoutingTrackRecoTable = cms.EDProducer("SimpleTrackFlatTableProducer",
+     src = cms.InputTag("scoutingTrackReco"),
+     cut = cms.string(""),
+     name = cms.string("ScoutingTrackReco"),
+     doc  = cms.string("Scouting Track after Reco"),
+     singleton = cms.bool(False),
+     extension = cms.bool(False),
+     variables = cms.PSet(
+         pt = Var('pt()', 'float', precision=10, doc='pt'),
+         eta = Var('eta()', 'float', precision=10, doc='eta'),
+         phi = Var('phi()', 'float', precision=10, doc='phi'),
+         chi2 = Var('chi2()', 'float', precision=10, doc='chi squared'),
+         ndof = Var('ndof()', 'float', precision=10, doc='number of degrees of freedom'),
+         charge = Var('charge()', 'int', doc='charge'),
+         dxy = Var('dxy()', 'float', precision=10, doc='dxy'),
+         dz = Var('dz()', 'float', precision=10, doc='dz'),
+         qoverp = Var('qoverp()', 'float', precision=10, doc='qoverp'),
+         lambda_ = Var('lambda()', 'float', precision=10, doc='lambda'),
+         dxyError = Var('dxyError()', 'float', precision=10, doc='dxyError'),
+         dzError = Var('dzError()', 'float', precision=10, doc='dzError'),
+         qoverpError = Var('qoverpError()', 'float', precision=10, doc='qoverpError'),
+         lambdaError = Var('lambdaError()', 'float', precision=10, doc='lambdaError'),
+         phiError = Var('phiError()', 'float', precision=10, doc='phiError'),
+         dsz = Var('dsz()', 'float', precision=10, doc='dsz'),
+         dszError = Var('dszError()', 'float', precision=10, doc='dszError'),
+         qoverp_lambda_cov = Var('covariance(0, 1)', 'float', precision=10, doc='qoverp lambda covariance ((0,1) element of covariance matrix)'),
+         qoverp_phi_cov = Var('covariance(0, 2)', 'float', precision=10, doc='qoverp phi covariance ((0,2) element of covariance matrix)'),
+         qoverp_dxy_cov = Var('covariance(0, 3)', 'float', precision=10, doc='qoverp dxy covariance ((0,3) element of covariance matrix)'),
+         qoverp_dsz_cov = Var('covariance(0, 4)', 'float', precision=10, doc='qoverp dsz covariance ((0,4) element of covariance matrix)'),
+         lambda_phi_cov = Var('covariance(1, 2)', 'float', precision=10, doc='lambda phi covariance ((1,2) element of covariance matrix)'),
+         lambda_dxy_cov = Var('covariance(1, 3)', 'float', precision=10, doc='lambda dxy covariance ((1,3) element of covariance matrix)'),
+         lambda_dsz_cov = Var('covariance(1, 4)', 'float', precision=10, doc='lambd dsz covariance ((1,4) element of covariance matrix)'),
+         phi_dxy_cov = Var('covariance(2, 3)', 'float', precision=10, doc='phi dxy covariance ((2,3) element of covariance matrix)'),
+         phi_dsz_cov = Var('covariance(2, 4)', 'float', precision=10, doc='phi dsz covariance ((2,4) element of covariance matrix)'),
+         dxy_dsz_cov = Var('covariance(3, 4)', 'float', precision=10, doc='dxy dsz covariance ((3,4) element of covariance matrix)'),
+         vx = Var('vx()', 'float', precision=10, doc='vx'),
+         vy = Var('vy()', 'float', precision=10, doc='vy'),
+         vz = Var('vz()', 'float', precision=10, doc='vz'),
+     )
+)
+
+# adapt from HLT menu
+hltOnlineBeamSpotESProducer = cms.ESProducer( "OnlineBeamSpotESProducer",
+    timeThreshold = cms.int32( 999999 ),
+    sigmaZThreshold = cms.double( 2.0 ),
+    sigmaXYThreshold = cms.double( 4.0 ),
+    appendToDataLabel = cms.string( "" )
+)
+
+hltOnlineBeamSpot = cms.EDProducer("BeamSpotOnlineProducer",
+    beamMode = cms.untracked.uint32(11),
+    changeToCMSCoordinates = cms.bool(False),
+    gtEvmLabel = cms.InputTag(""),
+    maxRadius = cms.double(2),
+    maxZ = cms.double(40),
+    setSigmaZ = cms.double(0),
+    src = cms.InputTag(""),
+    useTransientRecord = cms.bool(True),
+)
+
+# for testing
+from PhysicsTools.NanoAOD.globals_cff import beamSpotTable
+onlineBeamSpotTable = beamSpotTable.clone(
+    src = cms.InputTag("hltOnlineBeamSpot"),
+    name = cms.string("OnlineBeamSpot"),
+    doc = cms.string("Online reconstructed BeamSpot"),
+)
+
+hltVerticesPF = cms.EDProducer( "PrimaryVertexProducer",
+    vertexCollections = cms.VPSet( 
+      cms.PSet(  chi2cutoff = cms.double( 3.0 ),
+        label = cms.string( "" ),
+        useBeamConstraint = cms.bool( False ),
+        minNdof = cms.double( 0.0 ),
+        maxDistanceToBeam = cms.double( 1.0 ),
+        algorithm = cms.string( "AdaptiveVertexFitter" )
+      ),
+      cms.PSet(  chi2cutoff = cms.double( 3.0 ),
+        label = cms.string( "WithBS" ),
+        useBeamConstraint = cms.bool( True ),
+        minNdof = cms.double( 0.0 ),
+        maxDistanceToBeam = cms.double( 1.0 ),
+        algorithm = cms.string( "AdaptiveVertexFitter" )
+      )
+    ),
+    verbose = cms.untracked.bool( False ),
+    TkFilterParameters = cms.PSet( 
+      maxEta = cms.double( 100.0 ),
+      minPt = cms.double( 0.0 ),
+      minSiliconLayersWithHits = cms.int32( 5 ),
+      minPixelLayersWithHits = cms.int32( 2 ),
+      maxNormalizedChi2 = cms.double( 20.0 ),
+      trackQuality = cms.string( "any" ),
+      algorithm = cms.string( "filter" ),
+      maxD0Significance = cms.double( 999.0 )
+    ),
+    beamSpotLabel = cms.InputTag( "hltOnlineBeamSpot" ),
+    TrackLabel = cms.InputTag( "scoutingTrackReco" ),
+    TrackTimeResosLabel = cms.InputTag( "dummy_default" ),
+    TrackTimesLabel = cms.InputTag( "dummy_default" ),
+    trackMTDTimeQualityVMapTag = cms.InputTag( "dummy_default" ),
+    TkClusParameters = cms.PSet( 
+      TkDAClusParameters = cms.PSet( 
+        zmerge = cms.double( 0.01 ),
+        Tstop = cms.double( 0.5 ),
+        d0CutOff = cms.double( 999.0 ),
+        dzCutOff = cms.double( 4.0 ),
+        vertexSize = cms.double( 0.15 ),
+        coolingFactor = cms.double( 0.6 ),
+        Tpurge = cms.double( 2.0 ),
+        Tmin = cms.double( 2.4 ),
+        uniquetrkweight = cms.double( 0.9 )
+      ),
+      algorithm = cms.string( "DA_vect" )
+    ),
+    isRecoveryIteration = cms.bool( False ),
+    recoveryVtxCollection = cms.InputTag( "" ),
+    useMVACut = cms.bool( False ),
+    minTrackTimeQuality = cms.double( 0.8 )
+)
+
+hltVerticesPFSelector = cms.EDFilter( "PrimaryVertexObjectFilter",
+    filterParams = cms.PSet( 
+      maxZ = cms.double( 24.0 ),
+      minNdof = cms.double( 4.0 ),
+      maxRho = cms.double( 2.0 ),
+      pvSrc = cms.InputTag( "hltVerticesPF" )
+    ),
+    src = cms.InputTag( "hltVerticesPF" )
+)
+
+hltVerticesPFFilter = cms.EDFilter( "VertexSelector",
+    src = cms.InputTag( "hltVerticesPFSelector" ),
+    cut = cms.string( "!isFake" ),
+    filter = cms.bool( True )
+)
+
+hltDeepInclusiveVertexFinderPF = cms.EDProducer( "InclusiveCandidateVertexFinder",
+    beamSpot = cms.InputTag( "hltOnlineBeamSpot" ),
+    primaryVertices = cms.InputTag( "hltVerticesPFFilter" ),
+    tracks = cms.InputTag( "scoutingPFCandidate" ),
+    minHits = cms.uint32( 8 ),
+    maximumLongitudinalImpactParameter = cms.double( 0.3 ),
+    maximumTimeSignificance = cms.double( 3.0 ),
+    minPt = cms.double( 0.8 ),
+    maxNTracks = cms.uint32( 30 ),
+    clusterizer = cms.PSet(
+      distanceRatio = cms.double( 20.0 ),
+      clusterMaxDistance = cms.double( 0.05 ),
+      seedMax3DIPSignificance = cms.double( 9999.0 ),
+      clusterMaxSignificance = cms.double( 4.5 ),
+      seedMin3DIPSignificance = cms.double( 1.2 ),
+      clusterMinAngleCosine = cms.double( 0.5 ),
+      seedMin3DIPValue = cms.double( 0.005 ),
+      seedMax3DIPValue = cms.double( 9999.0 )
+    ),
+    vertexMinAngleCosine = cms.double( 0.95 ),
+    vertexMinDLen2DSig = cms.double( 2.5 ),
+    vertexMinDLenSig = cms.double( 0.5 ),
+    fitterSigmacut = cms.double( 3.0 ),
+    fitterTini = cms.double( 256.0 ),
+    fitterRatio = cms.double( 0.25 ),
+    useDirectVertexFitter = cms.bool( True ),
+    useVertexReco = cms.bool( True ),
+    vertexReco = cms.PSet(
+      primcut = cms.double( 1.0 ),
+      seccut = cms.double( 3.0 ),
+      finder = cms.string( "avr" ),
+      smoothing = cms.bool( True )
+    )
+)
+
+hltDeepInclusiveSecondaryVerticesPF = cms.EDProducer( "CandidateVertexMerger",
+    secondaryVertices = cms.InputTag( "hltDeepInclusiveVertexFinderPF" ),
+    maxFraction = cms.double( 0.7 ),
+    minSignificance = cms.double( 2.0 )
+)
+
+hltDeepTrackVertexArbitratorPF = cms.EDProducer( "CandidateVertexArbitrator",
+    beamSpot = cms.InputTag( "hltOnlineBeamSpot" ),
+    primaryVertices = cms.InputTag( "hltVerticesPFFilter" ),
+    tracks = cms.InputTag( "scoutingPFCandidate" ),
+    secondaryVertices = cms.InputTag( "hltDeepInclusiveSecondaryVerticesPF" ),
+    dLenFraction = cms.double( 0.333 ),
+    dRCut = cms.double( 0.4 ),
+    distCut = cms.double( 0.04 ),
+    sigCut = cms.double( 5.0 ),
+    fitterSigmacut = cms.double( 3.0 ),
+    fitterTini = cms.double( 256.0 ),
+    fitterRatio = cms.double( 0.25 ),
+    trackMinLayers = cms.int32( 4 ),
+    trackMinPt = cms.double( 0.4 ),
+    trackMinPixels = cms.int32( 1 ),
+    maxTimeSignificance = cms.double( 3.5 )
+)
+
+hltDeepInclusiveMergedVerticesPF = cms.EDProducer( "CandidateVertexMerger",
+    secondaryVertices = cms.InputTag( "hltDeepTrackVertexArbitratorPF" ),
+    maxFraction = cms.double( 0.2 ),
+    minSignificance = cms.double( 10.0 )
+)
+
+from PhysicsTools.NanoAOD.simpleSecondaryVertexFlatTableProducer_cfi import simpleSecondaryVertexFlatTableProducer
+scoutingSecondaryVertexTable = simpleSecondaryVertexFlatTableProducer.clone(
+    src = cms.InputTag("hltDeepInclusiveMergedVerticesPF"),
+    name = cms.string("ScoutingSV"),
+    extension = cms.bool(False),
+    variables = cms.PSet(P4Vars,
+        x   = Var("position().x()", float, doc = "secondary vertex X position, in cm",precision=10),
+        y   = Var("position().y()", float, doc = "secondary vertex Y position, in cm",precision=10),
+        z   = Var("position().z()", float, doc = "secondary vertex Z position, in cm",precision=14),
+        ndof    = Var("vertexNdof()", float, doc = "number of degrees of freedom",precision=8),
+        chi2    = Var("vertexNormalizedChi2()", float, doc = "reduced chi2, i.e. chi/ndof",precision=8),
+        ntracks = Var("numberOfDaughters()", "uint8", doc = "number of tracks"),
+    ),
+)
+
+###############
+# Jet Tagging #
+###############
+
+scoutingCHSJetReclusterParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProducer",
       jet_radius = cms.double( 0.4 ),
       min_jet_pt = cms.double( 5.0 ),
       max_jet_eta = cms.double( 2.5 ),
@@ -278,122 +903,52 @@ ak4ScoutingJetParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProd
       flip_ip_sign = cms.bool( False ),
       sip3dSigMax = cms.double( -1.0 ),
       use_hlt_features = cms.bool( False ),
-      pf_candidates = cms.InputTag( "scoutingPFCands" ),
-      jets = cms.InputTag( "ak4ScoutingJets" ),
+      pf_candidates = cms.InputTag( "scoutingPFCHSCandidate" ),
+      jets = cms.InputTag( "scoutingCHSJetRecluster" ),
       puppi_value_map = cms.InputTag( "" ),
       use_scouting_features = cms.bool( True ),
-      normchi2_value_map = cms.InputTag("scoutingPFCands", "normchi2"),
-      dz_value_map = cms.InputTag("scoutingPFCands", "dz"),
-      dxy_value_map = cms.InputTag("scoutingPFCands", "dxy"),
-      dzsig_value_map = cms.InputTag("scoutingPFCands", "dzsig"),
-      dxysig_value_map = cms.InputTag("scoutingPFCands", "dxysig"),
-      lostInnerHits_value_map = cms.InputTag("scoutingPFCands", "lostInnerHits"),
-      quality_value_map = cms.InputTag("scoutingPFCands", "quality"),
-      trkPt_value_map = cms.InputTag("scoutingPFCands", "trkPt"),
-      trkEta_value_map = cms.InputTag("scoutingPFCands", "trkEta"),
-      trkPhi_value_map = cms.InputTag("scoutingPFCands", "trkPhi"),
+      normchi2_value_map = cms.InputTag("scoutingPFCHSCandidate", "normchi2"),
+      dz_value_map = cms.InputTag("scoutingPFCHSCandidate", "dz"),
+      dxy_value_map = cms.InputTag("scoutingPFCHSCandidate", "dxy"),
+      dzsig_value_map = cms.InputTag("scoutingPFCHSCandidate", "dzsig"),
+      dxysig_value_map = cms.InputTag("scoutingPFCHSCandidate", "dxysig"),
+      lostInnerHits_value_map = cms.InputTag("scoutingPFCHSCandidate", "lostInnerHits"),
+      quality_value_map = cms.InputTag("scoutingPFCHSCandidate", "quality"),
+      trkPt_value_map = cms.InputTag("scoutingPFCHSCandidate", "trkPt"),
+      trkEta_value_map = cms.InputTag("scoutingPFCHSCandidate", "trkEta"),
+      trkPhi_value_map = cms.InputTag("scoutingPFCHSCandidate", "trkPhi"),
 )
 
 from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
 
-ak4ScoutingJetParticleNetJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer",
-      jets = cms.InputTag("ak4ScoutingJets"),
+scoutingCHSJetReclusterParticleNetJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer",
+      jets = cms.InputTag("scoutingCHSJetRecluster"),
       produceValueMap = cms.untracked.bool(True),
-      src = cms.InputTag("ak4ScoutingJetParticleNetJetTagInfos"),
+      src = cms.InputTag("scoutingCHSJetReclusterParticleNetJetTagInfos"),
       preprocess_json = cms.string("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK4/V00/preprocess.json"),
       model_path = cms.FileInPath("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK4/V00/particle-net.onnx"),
       flav_names = cms.vstring(["probb", "probbb","probc", "probcc", "probuds", "probg", "probundef"]),
       debugMode = cms.untracked.bool(False),
 )
 
-ak4ScoutingJetTable = cms.EDProducer("SimplePFJetFlatTableProducer",
-      src = cms.InputTag("ak4ScoutingJets"),
-      name = cms.string("ScoutingJet"),
-      cut = cms.string(""),
-      doc = cms.string("ScoutingJet"),
-      singleton = cms.bool(False),
-      extension = cms.bool(False), # this is the main table
-      externalVariables = cms.PSet(
-         particleNet_prob_b = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probb'), float, doc="ParticleNet probability of b", precision=10),
-         particleNet_prob_bb = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probbb'), float, doc="ParticleNet probability of bb", precision=10),
-         particleNet_prob_c = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probc'), float, doc="ParticleNet probability of c", precision=10),
-         particleNet_prob_cc = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probcc'), float, doc="ParticleNet probability of cc", precision=10),
-         particlenet_prob_uds = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probuds'), float, doc="particlenet probability of uds", precision=10),
-         particleNet_prob_g = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probg'), float, doc="ParticleNet probability of g", precision=10),
-         particleNet_prob_undef = ExtVar(cms.InputTag('ak4ScoutingJetParticleNetJetTags:probundef'), float, doc="ParticleNet probability of undef", precision=10),
-      ),
-      variables = cms.PSet(
-         P4Vars,
-         area = Var("jetArea()", float, doc="jet catchment area, for JECs",precision=10),
-         chHEF = Var("chargedHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Hadron Energy Fraction", precision= 6),
-         neHEF = Var("neutralHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Hadron Energy Fraction", precision= 6),
-         chEmEF = Var("(electronEnergy()+muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Electromagnetic Energy Fraction", precision= 6),
-         neEmEF = Var("(photonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Electromagnetic Energy Fraction", precision= 6),
-         muEF = Var("(muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="muon Energy Fraction", precision= 6),
-         nCh = Var("chargedHadronMultiplicity()", int, doc="number of charged hadrons in the jet"),
-         nNh = Var("neutralHadronMultiplicity()", int, doc="number of neutral hadrons in the jet"),
-         nMuons = Var("muonMultiplicity()", int, doc="number of muons in the jet"),
-         nElectrons = Var("electronMultiplicity()", int, doc="number of electrons in the jet"),
-         nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
-         nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
-      ),
+scoutingCHSJetReclusterParticleNetTagExtensionTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+    src = cms.InputTag("scoutingCHSJetRecluster"),
+    name = cms.string("ScoutingCHSJetRecluster"),
+    cut = cms.string(""),
+    singleton = cms.bool(False),
+    extension = cms.bool(True),
+    externalVariables = cms.PSet(
+         particleNet_prob_b = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probb'), float, doc="ParticleNet probability of b", precision=10),
+         particleNet_prob_bb = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probbb'), float, doc="ParticleNet probability of bb", precision=10),
+         particleNet_prob_c = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probc'), float, doc="ParticleNet probability of c", precision=10),
+         particleNet_prob_cc = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probcc'), float, doc="ParticleNet probability of cc", precision=10),
+         particleNet_prob_uds = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probuds'), float, doc="particlenet probability of uds", precision=10),
+         particleNet_prob_g = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probg'), float, doc="ParticleNet probability of g", precision=10),
+         particleNet_prob_undef = ExtVar(cms.InputTag('scoutingCHSJetReclusterParticleNetJetTags:probundef'), float, doc="ParticleNet probability of undef", precision=10),
+    ),
 )
 
-ak4ScoutingJetMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
-      src = cms.InputTag("ak4ScoutingJets"),
-      matched = cms.InputTag("slimmedGenJets"),
-      distMax = cms.double(0.4),
-      value = cms.string("index"),
-  )
-
-ak4ScoutingJetExtTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
-      src = cms.InputTag("ak4ScoutingJets"),
-      name = cms.string("ScoutingJet"),
-      cut = cms.string(""),
-      singleton = cms.bool(False),
-      extension = cms.bool(True),
-      externalVariables = cms.PSet(
-         genJetIdx = ExtVar(cms.InputTag("ak4ScoutingJetMatchGen"), int, doc="gen jet idx"),
-      ),
-      variables = cms.PSet(),
-  )
-
-################
-# Scouting AK8 jets
-
-ak8ScoutingJets = ak4PFJets.clone(
-     src = ("scoutingPFCands"),
-     rParam   = 0.8,
-     jetPtMin = 170.0,
-)
-
-ak8ScoutingJetsSoftDrop = ak4PFJets.clone(
-     src = ("scoutingPFCands"),
-     rParam   = 0.8,
-     jetPtMin = 170.0,
-     useSoftDrop = cms.bool(True),
-     zcut = cms.double(0.1),
-     beta = cms.double(0.0),
-     R0   = cms.double(0.8),
-     useExplicitGhosts = cms.bool(True),
-     writeCompound = cms.bool(True),
-     jetCollInstanceName=cms.string("SubJets"),
-  )
-
-ak8ScoutingJetsSoftDropMass = cms.EDProducer("RecoJetDeltaRValueMapProducer",
-     src = cms.InputTag("ak8ScoutingJets"),
-     matched = cms.InputTag("ak8ScoutingJetsSoftDrop"),
-     distMax = cms.double(0.8),
-     value = cms.string('mass')
-  )
-
-from RecoJets.JetProducers.ECF_cff import ecfNbeta1
-ak8ScoutingJetEcfNbeta1 = ecfNbeta1.clone(src = cms.InputTag("ak8ScoutingJets"), srcWeights="")
-
-from RecoJets.JetProducers.nJettinessAdder_cfi import Njettiness
-ak8ScoutingJetNjettiness = Njettiness.clone(src = cms.InputTag("ak8ScoutingJets"), srcWeights="")
-
-ak8ScoutingJetParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProducer",
+scoutingFatCHSJetReclusterParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProducer",
       jet_radius = cms.double( 0.8 ),
       min_jet_pt = cms.double( 50 ),
       max_jet_eta = cms.double( 2.5 ),
@@ -406,97 +961,163 @@ ak8ScoutingJetParticleNetJetTagInfos = cms.EDProducer("DeepBoostedJetTagInfoProd
       flip_ip_sign = cms.bool( False ),
       sip3dSigMax = cms.double( -1.0 ),
       use_hlt_features = cms.bool( False ),
-      pf_candidates = cms.InputTag( "scoutingPFCands" ),
-      jets = cms.InputTag( "ak8ScoutingJets" ),
+      pf_candidates = cms.InputTag("scoutingPFCHSCandidate"),
+      jets = cms.InputTag("scoutingFatCHSJetRecluster"),
       puppi_value_map = cms.InputTag( "" ),
       use_scouting_features = cms.bool( True ),
-      normchi2_value_map = cms.InputTag("scoutingPFCands", "normchi2"),
-      dz_value_map = cms.InputTag("scoutingPFCands", "dz"),
-      dxy_value_map = cms.InputTag("scoutingPFCands", "dxy"),
-      dzsig_value_map = cms.InputTag("scoutingPFCands", "dzsig"),
-      dxysig_value_map = cms.InputTag("scoutingPFCands", "dxysig"),
-      lostInnerHits_value_map = cms.InputTag("scoutingPFCands", "lostInnerHits"),
-      quality_value_map = cms.InputTag("scoutingPFCands", "quality"),
-      trkPt_value_map = cms.InputTag("scoutingPFCands", "trkPt"),
-      trkEta_value_map = cms.InputTag("scoutingPFCands", "trkEta"),
-      trkPhi_value_map = cms.InputTag("scoutingPFCands", "trkPhi"),
-  )
+      normchi2_value_map = cms.InputTag("scoutingPFCHSCandidate", "normchi2"),
+      dz_value_map = cms.InputTag("scoutingPFCHSCandidate", "dz"),
+      dxy_value_map = cms.InputTag("scoutingPFCHSCandidate", "dxy"),
+      dzsig_value_map = cms.InputTag("scoutingPFCHSCandidate", "dzsig"),
+      dxysig_value_map = cms.InputTag("scoutingPFCHSCandidate", "dxysig"),
+      lostInnerHits_value_map = cms.InputTag("scoutingPFCHSCandidate", "lostInnerHits"),
+      quality_value_map = cms.InputTag("scoutingPFCHSCandidate", "quality"),
+      trkPt_value_map = cms.InputTag("scoutingPFCHSCandidate", "trkPt"),
+      trkEta_value_map = cms.InputTag("scoutingPFCHSCandidate", "trkEta"),
+      trkPhi_value_map = cms.InputTag("scoutingPFCHSCandidate", "trkPhi"),
+)
 
 from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
-ak8ScoutingJetParticleNetJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer",
-      jets = cms.InputTag("ak8ScoutingJets"),
+scoutingFatCHSJetReclusterParticleNetJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer",
+      jets = cms.InputTag("scoutingFatCHSJetRecluster"),
       produceValueMap = cms.untracked.bool(True),
-      src = cms.InputTag("ak8ScoutingJetParticleNetJetTagInfos"),
+      src = cms.InputTag("scoutingFatCHSJetReclusterParticleNetJetTagInfos"),
       preprocess_json = cms.string("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/General/V00/preprocess.json"),
       model_path = cms.FileInPath("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/General/V00/particle-net.onnx"),
-      flav_names = cms.vstring(["probHbb", "probHcc","probHqq", "probQCDall"]),
+      flav_names = cms.vstring(["probQCDall", "probHbb","probHcc", "probHqq"]),
       debugMode = cms.untracked.bool(False),
-  )
+)
 
-ak8ScoutingJetParticleNetMassRegressionJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer",
-      jets = cms.InputTag("ak8ScoutingJets"),
-      produceValueMap = cms.untracked.bool(True),
-      src = cms.InputTag("ak8ScoutingJetParticleNetJetTagInfos"),
-      preprocess_json = cms.string("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/MassRegression/V00/preprocess.json"),
-      model_path = cms.FileInPath("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/MassRegression/V00/particle-net.onnx"),
-      flav_names = cms.vstring(["mass"]),
-      debugMode = cms.untracked.bool(False),
-  )
-
-ak8ScoutingJetTable = cms.EDProducer("SimplePFJetFlatTableProducer",
-      src = cms.InputTag("ak8ScoutingJets"),
-      name = cms.string("ScoutingFatJet"),
-      cut = cms.string(""),
-      doc = cms.string("ScoutingFatJet"),
-      singleton = cms.bool(False),
-      extension = cms.bool(False), # this is the main table
-      externalVariables = cms.PSet(
-         #genJetAK8Idx = ExtVar(cms.InputTag("ak8ScoutingJetMatchGen"), int, doc="gen jet idx"),
-         msoftdrop = ExtVar(cms.InputTag('ak8ScoutingJetsSoftDropMass'), float, doc="Softdrop mass", precision=10),
-         n2b1 = ExtVar(cms.InputTag('ak8ScoutingJetEcfNbeta1:ecfN2'), float, doc="N2 with beta=1", precision=10),
-         n3b1 = ExtVar(cms.InputTag('ak8ScoutingJetEcfNbeta1:ecfN3'), float, doc="N3 with beta=1", precision=10),
-         tau1 = ExtVar(cms.InputTag('ak8ScoutingJetNjettiness:tau1'), float, doc="Nsubjettiness (1 axis)", precision=10),
-         tau2 = ExtVar(cms.InputTag('ak8ScoutingJetNjettiness:tau2'), float, doc="Nsubjettiness (2 axis)", precision=10),
-         tau3 = ExtVar(cms.InputTag('ak8ScoutingJetNjettiness:tau3'), float, doc="Nsubjettiness (3 axis)", precision=10),
-         tau4 = ExtVar(cms.InputTag('ak8ScoutingJetNjettiness:tau4'), float, doc="Nsubjettiness (4 axis)", precision=10),
-         particleNet_mass = ExtVar(cms.InputTag('ak8ScoutingJetParticleNetMassRegressionJetTags:mass'), float, doc="ParticleNet regressed mass", precision=10),
-         particleNet_prob_Hbb = ExtVar(cms.InputTag('ak8ScoutingJetParticleNetJetTags:probHbb'), float, doc="ParticleNet probability of Hbb", precision=10),
-         particleNet_prob_Hcc = ExtVar(cms.InputTag('ak8ScoutingJetParticleNetJetTags:probHcc'), float, doc="ParticleNet probability of Hcc", precision=10),
-         particleNet_prob_Hqq = ExtVar(cms.InputTag('ak8ScoutingJetParticleNetJetTags:probHqq'), float, doc="ParticleNet probability of Hqq", precision=10),
-         particleNet_prob_QCD = ExtVar(cms.InputTag('ak8ScoutingJetParticleNetJetTags:probQCDall'), float, doc="ParticleNet probability of QCD", precision=10),
-      ),
-      variables = cms.PSet(
-         P4Vars,
-         area = Var("jetArea()", float, doc="jet catchment area, for JECs",precision=10),
-         chHEF = Var("chargedHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Hadron Energy Fraction", precision= 6),
-         neHEF = Var("neutralHadronEnergy()/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Hadron Energy Fraction", precision= 6),
-         chEmEF = Var("(electronEnergy()+muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="charged Electromagnetic Energy Fraction", precision= 6),
-         neEmEF = Var("(photonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="neutral Electromagnetic Energy Fraction", precision= 6),
-         muEF = Var("(muonEnergy())/(chargedHadronEnergy()+neutralHadronEnergy()+photonEnergy()+electronEnergy()+muonEnergy())", float, doc="muon Energy Fraction", precision= 6),
-         nCh = Var("chargedHadronMultiplicity()", int, doc="number of charged hadrons in the jet"),
-         nNh = Var("neutralHadronMultiplicity()", int, doc="number of neutral hadrons in the jet"),
-         nMuons = Var("muonMultiplicity()", int, doc="number of muons in the jet"),
-         nElectrons = Var("electronMultiplicity()", int, doc="number of electrons in the jet"),
-         nPhotons = Var("photonMultiplicity()", int, doc="number of photons in the jet"),
-         nConstituents = Var("numberOfDaughters()", "uint8", doc="number of particles in the jet")
-      ),
-  )
-
-ak8ScoutingJetMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
-      src = cms.InputTag("ak8ScoutingJets"),
-      matched = cms.InputTag("slimmedGenJetsAK8"),
-      distMax = cms.double(0.8),
-      value = cms.string("index"),
-  )
-
-ak8ScoutingJetExtTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
-      src = cms.InputTag("ak8ScoutingJets"),
-      name = cms.string("ScoutingFatJet"),
+scoutingFatCHSJetReclusterParticleNetTagExtensionTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      name = cms.string("ScoutingFatCHSJetRecluster"),
       cut = cms.string(""),
       singleton = cms.bool(False),
       extension = cms.bool(True),
       externalVariables = cms.PSet(
-         genJetAK8Idx = ExtVar(cms.InputTag("ak8ScoutingJetMatchGen"), int, doc="gen jet idx"),
+         particleNet_prob_Hbb = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterParticleNetJetTags:probHbb'), float, doc="ParticleNet probability of Hbb", precision=10),
+         particleNet_prob_Hcc = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterParticleNetJetTags:probHcc'), float, doc="ParticleNet probability of Hcc", precision=10),
+         particleNet_prob_Hqq = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterParticleNetJetTags:probHqq'), float, doc="ParticleNet probability of Hqq", precision=10),
+         particleNet_prob_QCD = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterParticleNetJetTags:probQCDall'), float, doc="ParticleNet probability of QCD", precision=10),
       ),
-      variables = cms.PSet(),
-  )
+)
+
+############
+# Jet Mass #
+############
+
+# Softdrop mass
+
+scoutingFatCHSJetReclusterSoftDrop = ak4PFJets.clone(
+     src = ("scoutingPFCHSCandidate"),
+     rParam   = 0.8,
+     jetPtMin = 170.0,
+     useSoftDrop = cms.bool(True),
+     zcut = cms.double(0.1),
+     beta = cms.double(0.0),
+     R0   = cms.double(0.8),
+     useExplicitGhosts = cms.bool(True),
+     writeCompound = cms.bool(True),
+     jetCollInstanceName=cms.string("SubJets"),
+)
+
+scoutingFatCHSJetReclusterSoftDropMass = cms.EDProducer("RecoJetDeltaRValueMapProducer",
+     src = cms.InputTag("scoutingFatCHSJetRecluster"),
+     matched = cms.InputTag("scoutingFatCHSJetReclusterSoftDrop"),
+     distMax = cms.double(0.8),
+     value = cms.string('mass')
+)
+
+scoutingFatCHSJetReclusterSoftDropMassExtensionTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      name = cms.string("ScoutingFatCHSJetRecluster"),
+      cut = cms.string(""),
+      singleton = cms.bool(False),
+      extension = cms.bool(True),
+      externalVariables = cms.PSet(
+         msoftdrop = ExtVar(cms.InputTag("scoutingFatCHSJetReclusterSoftDropMass"), float, doc="Softdrop mass", precision=10),
+      ),
+)
+
+# Mass regression 
+
+scoutingFatCHSJetReclusterParticleNetMassRegressionJetTags = cms.EDProducer("BoostedJetONNXJetTagsProducer",
+      jets = cms.InputTag("scoutingFatCHSJetRecluster"),
+      produceValueMap = cms.untracked.bool(True),
+      src = cms.InputTag("scoutingFatCHSJetReclusterParticleNetJetTagInfos"),
+      preprocess_json = cms.string("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/MassRegression/V00/preprocess.json"),
+      model_path = cms.FileInPath("RecoBTag/Combined/data/Run3Scouting/ParticleNetAK8/MassRegression/V00/particle-net.onnx"),
+      flav_names = cms.vstring(["mass"]),
+      debugMode = cms.untracked.bool(False),
+)
+
+scoutingFatCHSJetReclusterParticleNetMassExtensionTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      name = cms.string("ScoutingFatCHSJetRecluster"),
+      cut = cms.string(""),
+      singleton = cms.bool(False),
+      extension = cms.bool(True),
+      externalVariables = cms.PSet(
+         particleNet_mass = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterParticleNetMassRegressionJetTags:mass'), float, doc="ParticleNet regressed mass", precision=10),
+      ),
+)
+
+##############################
+# Jet Substructure Variables #
+##############################
+
+from RecoJets.JetProducers.ECF_cff import ecfNbeta1
+scoutingFatCHSJetReclusterEcfNbeta1 = ecfNbeta1.clone(src = cms.InputTag("scoutingFatCHSJetRecluster"), srcWeights="")
+
+from RecoJets.JetProducers.nJettinessAdder_cfi import Njettiness
+scoutingFatCHSJetReclusterNjettiness = Njettiness.clone(src = cms.InputTag("scoutingFatCHSJetRecluster"), srcWeights="")
+
+scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTable = cms.EDProducer("SimplePFJetFlatTableProducer",
+      src = cms.InputTag("scoutingFatCHSJetRecluster"),
+      name = cms.string("ScoutingFatCHSJetRecluster"),
+      cut = cms.string(""),
+      singleton = cms.bool(False),
+      extension = cms.bool(True),
+      externalVariables = cms.PSet(
+         n2b1 = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterEcfNbeta1:ecfN2'), float, doc="N2 with beta=1", precision=10),
+         n3b1 = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterEcfNbeta1:ecfN3'), float, doc="N3 with beta=1", precision=10),
+         tau1 = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterNjettiness:tau1'), float, doc="Nsubjettiness (1 axis)", precision=10),
+         tau2 = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterNjettiness:tau2'), float, doc="Nsubjettiness (2 axis)", precision=10),
+         tau3 = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterNjettiness:tau3'), float, doc="Nsubjettiness (3 axis)", precision=10),
+         tau4 = ExtVar(cms.InputTag('scoutingFatCHSJetReclusterNjettiness:tau4'), float, doc="Nsubjettiness (4 axis)", precision=10),
+      ),
+)
+
+#####################
+### Other objects ###
+#####################
+
+# Offline PF Candidates
+# Reduced fields are saved CandVars (pt, phi, eta, mass, pdgId, charge)
+# If more fields are needed, consider using BTVNano (custom_btv_cff.addPF)
+offlinePFCandidateTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src = cms.InputTag("packedPFCandidates"),
+    cut = cms.string(""), #we should not filter after pruning
+    name = cms.string("PFCandidate"),
+    doc = cms.string("Offline PF candidates"),
+    singleton = cms.bool(False),
+    extension = cms.bool(False), # this is the main table
+    variables = cms.PSet(
+        CandVars,
+    )
+)
+
+# Offline PF Jet
+# Closest to ScoutingPFJet since no pileup mitigation is applied at HLT
+# Standard Nano and JMENano no longer contain PFJet without any pileup mitigation
+offlinePFJet = ak4PFJets.clone(
+    src = "packedPFCandidates",
+    jetPtMin = 20,
+)
+
+offlinePFJetTable = scoutingPFJetReclusterTable.clone(
+      src = cms.InputTag("offlinePFJet"),
+      name = cms.string("PFJet"),
+      cut = cms.string(""),
+      doc = cms.string("PFJet from clustering packed PF Candidate"),
+)
