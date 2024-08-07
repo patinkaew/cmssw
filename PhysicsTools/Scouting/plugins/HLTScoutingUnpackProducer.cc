@@ -186,11 +186,11 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
     auto recoPFCandidate_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
     auto recoPFCHSCandidate_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
     auto recoPFTrack_collection_ptr = std::make_unique<reco::TrackCollection>();
-    reco::TrackRefProd recoTrack_collection_refprod = iEvent.getRefBeforePut<reco::TrackCollection>("Track");
-    reco::TrackRefProd recoPFTrack_collection_refprod = iEvent.getRefBeforePut<reco::TrackCollection>("PFTrack");
     //reco::TrackRefProd recoTrack_collection_refprod = iEvent.getRefBeforePut(recoTrack_collection_token_);
     //reco::TrackRefProd recoPFTrack_collection_refprod = iEvent.getRefBeforePut(recoPFTrack_collection_token_);
     if (scoutingPFCandidate_collection_handle.isValid() && (produce_PFCandidate_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_)) {
+        reco::TrackRefProd recoTrack_collection_refProd = iEvent.getRefBeforePut<reco::TrackCollection>("Track");
+        reco::TrackRefProd recoPFTrack_collection_refProd = iEvent.getRefBeforePut<reco::TrackCollection>("PFTrack");
         particle_data_table_ = iSetup.getHandle(particle_data_table_token_).product();
         for (auto const& scoutingPFCandidate: *scoutingPFCandidate_collection_handle) {    
             reco::PFCandidate recoPFCandidate = createPFCandidate(scoutingPFCandidate);
@@ -200,14 +200,14 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
                 // try to search for track built from ScoutingTrack containing more information
                 int recoTrack_index = -1; //findCompatibleScoutingTrack(recoPFTrack_ptr, recoTrack_collection_ptr);
                 if (recoTrack_index >= 0) { // found
-                    reco::TrackRef trackRef(recoTrack_collection_refprod, recoTrack_index);
+                    reco::TrackRef trackRef(recoTrack_collection_refProd, recoTrack_index);
                     recoPFCandidate.setTrackRef(trackRef);
-                    recoPFCandidate.setVertex(trackRef->vertex());
+                    recoPFCandidate.setVertex((recoTrack_collection_ptr->at(recoTrack_index)).vertex());
                 } else { // not found 
-                    reco::TrackRef trackRef(recoPFTrack_collection_refprod, recoPFTrack_collection_ptr->size());
-                    recoPFCandidate.setTrackRef(trackRef);
-                    recoPFCandidate.setVertex(trackRef->vertex());
                     recoPFTrack_collection_ptr->push_back(*recoPFTrack_ptr);
+                    reco::TrackRef trackRef(recoPFTrack_collection_refProd, recoPFTrack_collection_ptr->size() - 1);
+                    recoPFCandidate.setTrackRef(trackRef);
+                    recoPFCandidate.setVertex(recoPFTrack_ptr->vertex());
                 }
             }
             recoPFCandidate_collection_ptr->push_back(recoPFCandidate);
@@ -225,8 +225,9 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
     
     //iEvent.put(std::move(recoTrack_collection_ptr), "Track");
     putWithRef<reco::Track, Run3ScoutingTrack>(iEvent, "Track", recoTrack_collection_ptr, scoutingTrackRef_collection_ptr);
-
+    
     if (produce_PFCandidate_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_) {
+        //std::cout << "PFTrack put " << produce_PFCandidate_ << std::endl;
         iEvent.put(std::move(recoPFTrack_collection_ptr), "PFTrack");
     }
     if (produce_PFCandidate_) {
@@ -235,6 +236,7 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
     if (produce_PFCHSCandidate_) {
         iEvent.put(std::move(recoPFCHSCandidate_collection_ptr), "PFCHSCandidate");
     }
+    
 }
 
 reco::PFJet HLTScoutingUnpackProducer::createPFJet(Run3ScoutingPFJet const& scoutingPFJet) {
@@ -359,8 +361,8 @@ reco::PFCandidate HLTScoutingUnpackProducer::createPFCandidate(Run3ScoutingParti
     float m = 0.;
     int charge = 0;
     auto particle_data_ptr = particle_data_table_->particle(HepPDT::ParticleID(pdgId)); // particle data
-    // h_HF (1), egamma_HF (2), X(0)
-    if ((pdgId == 1 || pdgId == 2 || pdgId == 0) && (particle_data_ptr != nullptr)) {
+    // fake pdgId: h_HF (1), egamma_HF (2), X(0)
+    if (!(pdgId == 1 || pdgId == 2 || pdgId == 0) && (particle_data_ptr != nullptr)) {
         m = particle_data_ptr->mass();
         charge = particle_data_ptr->charge();
     } else {
