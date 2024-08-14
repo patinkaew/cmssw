@@ -94,9 +94,6 @@ private:
     bool produce_PFSKCandidate_; // SK = soft killer
     HepPDT::ParticleDataTable const *particle_data_table_;
 
-    //edm::EDPutTokenT<reco::TrackCollection> recoTrack_collection_token_;
-    //edm::EDPutTokenT<reco::TrackCollection> recoPFTrack_collection_token_;
-    
     inline static const std::string REF_TO_SCOUTING_LABEL_SUFFIX_ = "-RefToScouting"; 
 };
 
@@ -196,10 +193,6 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
         reco::TrackRefProd recoTrack_collection_refProd = iEvent.getRefBeforePut<reco::TrackCollection>("Track");
         reco::TrackRefProd recoPFTrack_collection_refProd = iEvent.getRefBeforePut<reco::TrackCollection>("PFTrack");
         particle_data_table_ = iSetup.getHandle(particle_data_table_token_).product();
-        int found=0;
-        int not_found=0;
-        int not_found_0p8=0;
-        int not_found_1=0;
         for (size_t scoutingPFCandidate_index = 0; scoutingPFCandidate_index < scoutingPFCandidate_collection_handle->size(); scoutingPFCandidate_index++) {
             auto &scoutingPFCandidate = scoutingPFCandidate_collection_handle->at(scoutingPFCandidate_index);
             
@@ -210,39 +203,31 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
             if (hasPFTrackDetails(scoutingPFCandidate)) { 
                 // try to search for track built from ScoutingTrack containing more information
                 int recoTrack_index = findCompatibleScoutingTrack(scoutingPFCandidate, scoutingPrimaryVertex_collection_handle->at(0), recoTrack_collection_ptr);
-                if (recoTrack_index >= 0) { // found
+                if (recoTrack_index >= 0) {
+                    // found compatible track in ScoutingTrack collection
+                    // set TrackRef and vertex for reco::PFCandidate to track in ScoutingTrack collection
                     reco::TrackRef trackRef(recoTrack_collection_refProd, recoTrack_index);
                     recoPFCandidate.setTrackRef(trackRef);
                     recoPFCandidate.setVertex((recoTrack_collection_ptr->at(recoTrack_index)).vertex());
-                    //std::cout << "Found" << std::endl;
-                    //std::cout << "track pt original: " << scoutingPFCandidate.pt() << " retrieved: " << (recoTrack_collection_ptr->at(recoTrack_index)).pt() << std::endl;
-                    //std::cout << "track eta original: " << scoutingPFCandidate.eta() << " retrieved: " << (recoTrack_collection_ptr->at(recoTrack_index)).eta() << std::endl;
-                    //std::cout << "track phi original: " << scoutingPFCandidate.phi() << " retrieved: " << (recoTrack_collection_ptr->at(recoTrack_index)).phi() << std::endl;
-                    found++;
                     if (produce_PFCandidateMatchTrack_) {
                         recoPFCandidateMatchTrack_collection_ptr->push_back(recoPFCandidate);
                         scoutingPFCandidateMatchTrackRef_collection_ptr->push_back(edm::Ref<Run3ScoutingParticleCollection>(scoutingPFCandidate_collection_handle, scoutingPFCandidate_index));
                     }
-
+                    // combine information from ScoutingPFCandidate and ScoutingTrack to build fake HitPattern similar to pat::PackedCandidate
                     buildHitPattern(scoutingPFCandidate, scoutingTrack_collection_handle->at(recoTrack_index), recoTrack_collection_ptr->at(recoTrack_index));
+                    
+                    // set quality mask from PFCandidate
+                    (recoTrack_collection_ptr->at(recoTrack_index)).setQualityMask(static_cast<int8_t>(scoutingPFCandidate.quality()));
 
-                } else { // not found 
+                } else {
+                    // cannot find compatible track in ScoutingTrack collection
+                    // build another track collection (PFTrack) using only information from ScoutingPFCandidate
                     std::unique_ptr<reco::Track> recoPFTrack_ptr = createPFTrack(scoutingPFCandidate, scoutingPrimaryVertex_collection_handle);
+                    // set TrackRef and vertex for reco::PFCandidate
                     recoPFTrack_collection_ptr->push_back(*recoPFTrack_ptr);
                     reco::TrackRef trackRef(recoPFTrack_collection_refProd, recoPFTrack_collection_ptr->size() - 1);
                     recoPFCandidate.setTrackRef(trackRef);
                     recoPFCandidate.setVertex(recoPFTrack_ptr->vertex());
-                    if (recoPFTrack_ptr->pt() >= 1) {
-                        not_found_1++;
-                    }
-                    if (recoPFTrack_ptr->pt()>=0.8) {
-                        not_found_0p8++;
-                    }
-                    not_found++;
-                    //std::cout << "Not Found" << std::endl;
-                    //std::cout << "track pt original: " << scoutingPFCandidate.pt() << " retrieved: " << recoPFTrack_ptr->pt() << std::endl;
-                    //std::cout << "track eta original: " << scoutingPFCandidate.eta() << " retrieved: " << recoPFTrack_ptr->eta() << std::endl;
-                    //std::cout << "track phi original: " << scoutingPFCandidate.phi() << " retrieved: " << recoPFTrack_ptr->phi() << std::endl;
                 }
             } else {
                 if (produce_PFCandidateMatchTrack_) {
@@ -253,15 +238,22 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
             recoPFCandidate_collection_ptr->push_back(recoPFCandidate);
             scoutingPFCandidateRef_collection_ptr->push_back(edm::Ref<Run3ScoutingParticleCollection>(scoutingPFCandidate_collection_handle, scoutingPFCandidate_index));
             if (produce_PFCHSCandidate_) {
+                // currently apply CHS similar to Run3ScoutingParticleToRecoPFCandidateProducer which is not the same as, e.g. PAT
+                // For applying CHS to pat::, see
                 // https://github.com/cms-sw/cmssw/blob/master/CommonTools/ParticleFlow/python/pfCHS_cff.py
                 // https://github.com/cms-sw/cmssw/blob/master/DataFormats/PatCandidates/interface/PackedCandidate.h#L718-L731
-                if (scoutingPFCandidate.vertex() == 0) {
+                // For applying CHS to reco::, see
+                // https://github.com/cms-sw/cmssw/blob/master/CommonTools/ParticleFlow/python/pfNoPileUpJME_cff.py#L33
+                // https://github.com/cms-sw/cmssw/blob/master/CommonTools/ParticleFlow/src/PFPileUpAlgo.cc#L6
+                if (scoutingPFCandidate.vertex() <= 0) {
                     recoPFCHSCandidate_collection_ptr->push_back(recoPFCandidate);
                 }
             }
         }
-    //    std::cout << "Found: " << found << " Not Found: " << not_found << " Not Found pt>1 GeV: " << not_found_1 << " Not Found pt>0.8 GeV: " << not_found_0p8 << std::endl;
     }
+
+    // build fake HitPattern for ScoutingTracks which are not matched with ScoutingPFCandidate
+    // this might be needed if perform vertexing with all tracks 
 
     // put products in Event
     putWithRef<reco::PFJet, Run3ScoutingPFJet>(iEvent, "PFJet", recoPFJet_collection_ptr, scoutingPFJetRef_collection_ptr);
@@ -432,7 +424,7 @@ bool HLTScoutingUnpackProducer::hasPFTrackDetails(Run3ScoutingParticle const& sc
     // no track for photon(22), neutral hadron(130), h_HF (1), egamma_HF (2), X(0)
     // see https://github.com/cms-sw/cmssw/blob/master/DataFormats/ParticleFlowCandidate/src/PFCandidate.cc#L231-L276
     if (pdgId == 22 || pdgId == 130 || pdgId == 1 || pdgId == 2 || pdgId == 0) {
-      return false;
+        return false;
     }
 
     if (scoutingPFCandidate.normchi2() >= 900) { // 999
@@ -481,16 +473,6 @@ int HLTScoutingUnpackProducer::findCompatibleScoutingTrack(Run3ScoutingParticle 
             && is_close(eta, recoTrack.eta(), 0.000001)
             && is_close(phi, recoTrack.phi(), 0.000001)
            ) {
-        /*    std::cout << "Found" << std::endl;
-            std::cout << "track normchi2: " << scoutingPFCandidate.normchi2() << " retrived: " << recoTrack.normalizedChi2() << std::endl;
-            std::cout << "track dxy: " << scoutingPFCandidate.dxy() << " retrived: " << recoTrack.dxy(v0) << std::endl;
-            std::cout << "track dz: " << scoutingPFCandidate.dz() << " retrived: " << recoTrack.dz(v0) << std::endl;
-            std::cout << "track dxysig: " << scoutingPFCandidate.dxysig() << " retrieved: " << recoTrack.dxy(v0)/recoTrack.dxyError() << std::endl;
-            std::cout << "track dzsig: " << scoutingPFCandidate.dzsig() << " retrieved: " << recoTrack.dz(v0)/recoTrack.dzError() << std::endl;
-            std::cout << "track pt original: " << pt << " retrieved: " << recoTrack.pt() << std::endl;
-            std::cout << "track eta original: " << eta << " retrieved: " << recoTrack.eta() << std::endl;
-            std::cout << "track phi original: " << phi << " retrieved: " << recoTrack.phi() << std::endl;
-         */ 
             return index;
         }
         index++;
@@ -501,16 +483,13 @@ int HLTScoutingUnpackProducer::findCompatibleScoutingTrack(Run3ScoutingParticle 
 // example from https://github.com/cms-sw/cmssw/blob/master/DataFormats/PatCandidates/src/PackedCandidate.cc#L219
 void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scoutingPFCandidate, Run3ScoutingTrack const& scoutingTrack, reco::Track & recoTrack) {
     // retrieve information from scoutingPFCandidate
-    //int8_t lost_inner_hits = scoutingPFCandidate.lostInnerHits();
-    //std::cout << "lostInnerHit: " << (int)lost_inner_hits <<  " test: " << (lost_inner_hits == pat::PackedCandidate::validHitInFirstPixelBarrelLayer) << std::endl;
     auto lost_inner_hits = static_cast<pat::PackedCandidate::LostInnerHits>(static_cast<int8_t>(scoutingPFCandidate.lostInnerHits()));
-
 
     // retrieve information from scoutingTrack
     int number_of_pixel_hits = scoutingTrack.tk_nValidPixelHits();
     int number_of_strip_hits = scoutingTrack.tk_nValidStripHits();
-    int number_of_layers_with_measurement = scoutingTrack.tk_nTrackerLayersWithMeasurement(); // pixel + strip number of layers?
-    //float abs_eta = fabs(scoutingTrack.tk_eta());
+    int number_of_tracker_layers_with_measurement = scoutingTrack.tk_nTrackerLayersWithMeasurement(); // pixel + strip number of layers?
+    int number_of_hits = number_of_pixel_hits + number_of_strip_hits;
 
     // pixel has 7 layers: 4 in BPIX + 3 FPIX
     int number_of_pxb_layers = 4;
@@ -519,9 +498,9 @@ void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scou
     // we assume the number of pixel layers with measurement is min(number_of_pixel_layers, number_of_layers_with_measurement)
     // in fact, even if we have number of layers with measurement more than number of pixel layers, we can have pixel layers with measurement less than number of pixel layers
     // but we don't have access to this information, so we will make this assumption here
-    int number_of_pixel_layers_with_measurement = number_of_layers_with_measurement > number_of_pixel_layers ? number_of_pixel_layers : number_of_layers_with_measurement; 
+    int number_of_pixel_layers_with_measurement = number_of_tracker_layers_with_measurement > number_of_pixel_layers ? number_of_pixel_layers : number_of_tracker_layers_with_measurement; 
     // number of pixel layers with measurement cannot exceed number of pixel hits
-    number_of_pixel_layers_with_measurement = number_of_layers_with_measurement > number_of_pixel_hits ? number_of_pixel_hits : number_of_pixel_layers_with_measurement;
+    number_of_pixel_layers_with_measurement = number_of_pixel_layers_with_measurement > number_of_pixel_hits ? number_of_pixel_hits : number_of_pixel_layers_with_measurement;
     
     // strip has 22 layers: 4 TIB + 3 TID + 6 TOB + 9 TEC
     int number_of_tib_layers = 4;
@@ -531,24 +510,15 @@ void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scou
     int number_of_strip_layers = number_of_tib_layers + number_of_tob_layers + number_of_tid_layers + number_of_tec_layers;
 
     // assume the remaining layers with measuremnet are in strip
-    int number_of_strip_layers_with_measurement = number_of_layers_with_measurement - number_of_pixel_layers_with_measurement;
+    int number_of_strip_layers_with_measurement = number_of_tracker_layers_with_measurement - number_of_pixel_layers_with_measurement;
     // number of strip layers with measurement cannot exceed number of strip layers
     // in fact, this it exceeds, we should throw error
     number_of_strip_layers_with_measurement = number_of_strip_layers_with_measurement > number_of_strip_layers ? number_of_strip_layers : number_of_strip_layers_with_measurement;
     // number of strip layers with measurement cannot exceed number of strip hits
     number_of_strip_layers_with_measurement = number_of_strip_layers_with_measurement > number_of_strip_hits ? number_of_strip_hits : number_of_strip_layers_with_measurement;
-
-    int number_of_hits = number_of_pixel_hits + number_of_strip_hits;
-    
-    /*
-    std::cout << "eta: " << scoutingTrack.tk_eta() << " pixel layers: " << number_of_pixel_layers << " pixel with measurement: " << number_of_pixel_layers_with_measurement << " strip layers: " << number_of_strip_layers << " strip layers with measurement: " << number_of_strip_layers_with_measurement;
-    std::cout << " layers with measurement true: " << number_of_layers_with_measurement << " guess: " << number_of_pixel_layers_with_measurement + number_of_strip_layers_with_measurement << " remain: " << number_of_layers_with_measurement - number_of_pixel_layers_with_measurement - number_of_strip_layers_with_measurement;
-    std::cout << " ndof: "  << ndof << " number of hits: " << number_of_hits << " pixel hits: " << number_of_pixel_hits << " strip hits: " << number_of_strip_hits << " pixel+strip hits: " << number_of_pixel_hits + number_of_strip_hits;
-    std::cout << std::endl;
-    */
-    
+ 
     // now, proceed similar to PackedCandidate
-    uint16_t first_hit = 0; // assume 0
+    uint16_t first_hit = 0; // assume 0 since ScoutingTrack does not save HitPattern
 
     int i = 0;
 
@@ -603,7 +573,8 @@ void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scou
     }
  
     // now start adding strip layers, putting one hit on each layer
-    // we don't know what the layers where, so we just start with 4 TIB, then 6 TOB, then 9 TEC, and then 3 TID
+    // we don't know what the layers where, so we just start with 4 TIB, then 3 TID, then 6 TOB, and then 9 TEC
+    // note the comment in PackedCandidate is incorrect 
     if (first_hit != 0 && reco::HitPattern::stripHitFilter(first_hit)) {
         i += 1;
     }
@@ -653,13 +624,9 @@ void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scou
             recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, 2, 0, TrackingRecHit::missing_inner);
             break;
     };
-    
-    //std::cout << "pixel hits expected: " << number_of_pixel_hits << " get: " << recoTrack.hitPattern().numberOfValidPixelHits() << " strip hits expected: " << number_of_strip_hits << " get: " << recoTrack.hitPattern().numberOfValidStripHits();
-    //std::cout << " layers with measurement expect: " << number_of_layers_with_measurement << " get: " << recoTrack.hitPattern().trackerLayersWithMeasurement() << std::endl;
-    // 
-    // set quality mask from PFCandidate
-    recoTrack.setQualityMask(static_cast<int8_t>(scoutingPFCandidate.quality()));
-    //std::cout << "quality: " << (int)quality << " isLoose: " << dummy.quality(reco::TrackBase::loose) << " isHighpurity: " << dummy.quality(reco::TrackBase::highPurity) << std::endl;
+
+    std::cout << "pixel hits expected: " << number_of_pixel_hits << " get: " << recoTrack.hitPattern().numberOfValidPixelHits() << " strip hits expected: " << number_of_strip_hits << " get: " << recoTrack.hitPattern().numberOfValidStripHits();
+    std::cout << " layers with measurement expect: " << number_of_tracker_layers_with_measurement << " get: " << recoTrack.hitPattern().trackerLayersWithMeasurement() << std::endl;
 }
 
 std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3ScoutingParticle const& scoutingPFCandidate,
@@ -706,7 +673,7 @@ std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3Scouti
     reco::TrackBase::CovarianceMatrix cov(cov_vec.begin(), cov_vec.end());
 
     reco::TrackBase::TrackAlgorithm algo(reco::TrackBase::undefAlgorithm); // undefined
-    reco::TrackBase::TrackQuality quality(reco::TrackBase::undefQuality); // undefined
+    reco::TrackBase::TrackQuality quality(reco::TrackBase::undefQuality); // undefined for constructor, but will set qualityMask later
 
     // the rests are default: t0 = 0, beta = 0, covt0t0 = -1, covbetabeta = -1
 
@@ -766,7 +733,7 @@ void HLTScoutingUnpackProducer::fillDescriptions(edm::ConfigurationDescriptions&
     desc.add<bool>("producePFCandidate", true);
     desc.add<bool>("producePFCandidateMatchTrack", false)->setComment("if PFCandidate has track, keep only ones that can be matched to track");
     desc.add<bool>("producePFCHSCandidate", false);
-    desc.add<bool>("producePFSKCandidate", false);
+    //desc.add<bool>("producePFSKCandidate", false);
 
     descriptions.addWithDefaultLabel(desc);
 }
