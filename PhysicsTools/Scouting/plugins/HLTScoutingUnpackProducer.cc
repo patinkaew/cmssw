@@ -625,8 +625,8 @@ void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scou
             break;
     };
 
-    std::cout << "pixel hits expected: " << number_of_pixel_hits << " get: " << recoTrack.hitPattern().numberOfValidPixelHits() << " strip hits expected: " << number_of_strip_hits << " get: " << recoTrack.hitPattern().numberOfValidStripHits();
-    std::cout << " layers with measurement expect: " << number_of_tracker_layers_with_measurement << " get: " << recoTrack.hitPattern().trackerLayersWithMeasurement() << std::endl;
+    //std::cout << "pixel hits expected: " << number_of_pixel_hits << " get: " << recoTrack.hitPattern().numberOfValidPixelHits() << " strip hits expected: " << number_of_strip_hits << " get: " << recoTrack.hitPattern().numberOfValidStripHits();
+    //std::cout << " layers with measurement expect: " << number_of_tracker_layers_with_measurement << " get: " << recoTrack.hitPattern().trackerLayersWithMeasurement() << std::endl;
 }
 
 std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3ScoutingParticle const& scoutingPFCandidate,
