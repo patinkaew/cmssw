@@ -374,6 +374,17 @@ scoutingRhoTable = cms.EDProducer("GlobalVariablesTableProducer",
 ##### Scouting Derived Objects #####
 ####################################
 
+# unpacking Scouting objects to reco:: objects for post-processing
+# TODO: convert other jet clustering producers to use this updated producer instead
+unpackedScoutingObjects = cms.EDProducer("HLTScoutingUnpackProducer",
+    scoutingPFJet = cms.InputTag("hltScoutingPFPacker"),
+    scoutingPFCandidate = cms.InputTag("hltScoutingPFPacker"),
+    scoutingPrimaryVertex = cms.InputTag("hltScoutingPrimaryVertexPacker", "primaryVtx"),
+    scoutingTrack = cms.InputTag("hltScoutingTrackPacker"),
+    producePFCandidate = cms.bool(True),
+    producePFCandidateMatchTrack = cms.bool(True),
+)
+
 # Scouting PF Candidate
 # translation from Run3ScoutingParticle to reco::PFCandidate
 # used as input for standard algorithm, e.g. jet clustering
@@ -587,6 +598,98 @@ scoutingPFJetReclusterCorrectionExtensionTable = scoutingPFJetReclusterTable.clo
     ),
 )
 
+#########
+# PUPPI #
+#########
+
+scoutingPFCandidatePuppiWeights = cms.EDProducer("PuppiProducer",
+    DeltaZCut = cms.double(0.3),
+    DeltaZCutForChargedFromPUVtxs = cms.double(0.2),
+    EtaMaxCharged = cms.double(99999),
+    EtaMaxPhotons = cms.double(2.5),
+    EtaMinUseDeltaZ = cms.double(0.0),
+    MinPuppiWeight = cms.double(0.01),
+    NumOfPUVtxsForCharged = cms.uint32(2),
+    PUProxyValue = cms.InputTag(""),
+    PtMaxCharged = cms.double(20.0),
+    PtMaxNeutrals = cms.double(200),
+    PtMaxNeutralsStartSlope = cms.double(20.0),
+    PtMaxPhotons = cms.double(-1),
+    UseDeltaZCut = cms.bool(True),
+    UseDeltaZCutForPileup = cms.bool(True),
+    UseFromPVLooseTight = cms.bool(False),
+    algos = cms.VPSet(
+        cms.PSet(
+            etaMin = cms.vdouble(0.0, 1.3),
+            etaMax = cms.vdouble(1.3, 2.5),
+            ptMin = cms.vdouble(0.0, 0.0),
+            MinNeutralPt = cms.vdouble(0.2, 0.2),
+            MinNeutralPtSlope = cms.vdouble(0.023, 0.023),
+            RMSEtaSF = cms.vdouble(1.0, 1.0),
+            MedEtaSF = cms.vdouble(1.0, 1.0),
+            EtaMaxExtrap = cms.double(2.0),
+            puppiAlgos = cms.VPSet(cms.PSet(
+                algoId = cms.int32(5),
+                applyLowPUCorr = cms.bool(True),
+                combOpt = cms.int32(0),
+                cone = cms.double(0.4),
+                rmsPtMin = cms.double(0.1),
+                rmsScaleFactor = cms.double(1.0),
+                useCharged = cms.bool(True)
+            ))
+        ),
+        cms.PSet(
+            etaMin = cms.vdouble(2.5, 3.0),
+            etaMax = cms.vdouble(3.0, 10.0),
+            ptMin = cms.vdouble(0.0, 0.0),
+            MinNeutralPt = cms.vdouble(1.7, 2.0),
+            MinNeutralPtSlope = cms.vdouble(0.123, 0.123),
+            RMSEtaSF = cms.vdouble(1.20, 0.95),
+            MedEtaSF = cms.vdouble(0.90, 0.75),
+            EtaMaxExtrap = cms.double(2.0),
+            puppiAlgos = cms.VPSet(cms.PSet(
+                algoId = cms.int32(5),
+                applyLowPUCorr = cms.bool(True),
+                combOpt = cms.int32(0),
+                cone = cms.double(0.4),
+                rmsPtMin = cms.double(0.5),
+                rmsScaleFactor = cms.double(1.0),
+                useCharged = cms.bool(False)
+            ))
+        )
+    ),
+    applyCHS = cms.bool(True),
+    candName = cms.InputTag("unpackedScoutingObjects", "PFCandidate"),
+    clonePackedCands = cms.bool(False),
+    invertPuppi = cms.bool(False),
+    mightGet = cms.optional.untracked.vstring,
+    puppiDiagnostics = cms.bool(False),
+    puppiNoLep = cms.bool(False),
+    useExistingWeights = cms.bool(False),
+    useExp = cms.bool(False),
+    usePUProxyValue = cms.bool(False),
+    useVertexAssociation = cms.bool(False),
+    vertexAssociation = cms.InputTag(""),
+    vertexAssociationQuality = cms.int32(0),
+    vertexName = cms.InputTag("unpackedScoutingObjects", "PrimaryVertex"),
+    vtxNdofCut = cms.int32(4),
+    vtxZCut = cms.double(24)
+)
+
+scoutingPuppiJetRecluster = ak4PFJets.clone(
+     src = ("unpackedScoutingObjects", "PFCandidate"),
+     jetPtMin = 20,
+     applyWeight = cms.bool(True),
+     srcWeights = cms.InputTag("scoutingPFCandidatePuppiWeights")
+)
+
+scoutingPuppiJetReclusterTable = scoutingPFJetReclusterTable.clone(
+    src = cms.InputTag("scoutingPuppiJetRecluster"),
+    name = cms.string("ScoutingPuppiJetRecluster"),
+    cut = cms.string(""),
+    doc = cms.string("Jet reclustered from Scouting PFCandidate with PUPPI applied"),
+)
+
 ####################
 # Gen Jet Matching #
 ####################
@@ -667,17 +770,8 @@ scoutingFatCHSJetReclusterConstituentIndex = cms.EDProducer("RecoJetConstituentI
 #    scoutingTrack = cms.InputTag("hltScoutingTrackPacker")
 #)
 
-scoutingUnpack = cms.EDProducer("HLTScoutingUnpackProducer",
-    scoutingPFJet = cms.InputTag("hltScoutingPFPacker"),
-    scoutingPFCandidate = cms.InputTag("hltScoutingPFPacker"),
-    scoutingPrimaryVertex = cms.InputTag("hltScoutingPrimaryVertexPacker", "primaryVtx"),
-    scoutingTrack = cms.InputTag("hltScoutingTrackPacker"),
-    producePFCandidate = cms.bool(True),
-    producePFCandidateMatchTrack = cms.bool(True),
-)
-
 scoutingPFCandidateRecoTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
-    src = cms.InputTag("scoutingUnpack", "PFCandidate"),
+    src = cms.InputTag("unpackedScoutingObjects", "PFCandidate"),
     name = cms.string("ScoutingPFCandidateReco"),
     cut = cms.string(""),
     doc = cms.string("Scouting Candidate"),
@@ -707,7 +801,7 @@ scoutingPFCandidateRecoTable = cms.EDProducer("SimpleCandidateFlatTableProducer"
 
 # for testing
 scoutingTrackRecoTable = cms.EDProducer("SimpleTrack2Run3ScoutingTrackFlatTableProducer",
-    src = cms.InputTag("scoutingUnpack", "Track"),
+    src = cms.InputTag("unpackedScoutingObjects", "Track"),
     cut = cms.string(""),
     name = cms.string("ScoutingTrackReco"),
     doc  = cms.string("Scouting Track after Reco"),
@@ -754,7 +848,7 @@ scoutingTrackRecoTable = cms.EDProducer("SimpleTrack2Run3ScoutingTrackFlatTableP
 )
 
 for var in scoutingTrackRecoTable.externalTypedVariables.parameters_():
-    setattr(getattr(scoutingTrackRecoTable.externalTypedVariables, var), "src", cms.InputTag("scoutingUnpack", "Track-RefToScouting"))
+    setattr(getattr(scoutingTrackRecoTable.externalTypedVariables, var), "src", cms.InputTag("unpackedScoutingObjects", "Track-RefToScouting"))
 
 # adapt from HLT menu
 hltOnlineBeamSpotESProducer = cms.ESProducer( "OnlineBeamSpotESProducer",
@@ -812,7 +906,7 @@ hltVerticesPF = cms.EDProducer( "PrimaryVertexProducer",
       maxD0Significance = cms.double( 999.0 )
     ),
     beamSpotLabel = cms.InputTag( "hltOnlineBeamSpot" ),
-    TrackLabel = cms.InputTag( "scoutingTrackReco" ),
+    TrackLabel = cms.InputTag( "unpackedScoutingObjects", "Track" ),
     TrackTimeResosLabel = cms.InputTag( "dummy_default" ),
     TrackTimesLabel = cms.InputTag( "dummy_default" ),
     trackMTDTimeQualityVMapTag = cms.InputTag( "dummy_default" ),
@@ -855,8 +949,8 @@ hltVerticesPFFilter = cms.EDFilter( "VertexSelector",
 from RecoVertex.AdaptiveVertexFinder.inclusiveCandidateVertexFinder_cfi import inclusiveCandidateVertexFinder
 hltDeepInclusiveVertexFinderPF = inclusiveCandidateVertexFinder.clone(
     beamSpot = cms.InputTag("hltOnlineBeamSpot"),
-    primaryVertices = cms.InputTag("scoutingUnpack", "PrimaryVertex"),
-    tracks = cms.InputTag("scoutingUnpack", "PFCandidateMatchTrack"),
+    primaryVertices = cms.InputTag("unpackedScoutingObjects", "PrimaryVertex"),
+    tracks = cms.InputTag("unpackedScoutingObjects", "PFCandidateMatchTrack"),
     minHits = cms.uint32(8), # HLT is 8, offline is 0
 )
 
@@ -868,8 +962,8 @@ hltDeepInclusiveSecondaryVerticesPF = candidateVertexMerger.clone(
 from RecoVertex.AdaptiveVertexFinder.candidateVertexArbitrator_cfi import candidateVertexArbitrator
 hltDeepTrackVertexArbitratorPF = candidateVertexArbitrator.clone(
     beamSpot = cms.InputTag("hltOnlineBeamSpot"),
-    primaryVertices = cms.InputTag("scoutingUnpack", "PrimaryVertex"),
-    tracks = cms.InputTag("scoutingUnpack", "PFCandidateMatchTrack" ),
+    primaryVertices = cms.InputTag("unpackedScoutingObjects", "PrimaryVertex"),
+    tracks = cms.InputTag("unpackedScoutingObjects", "PFCandidateMatchTrack" ),
     secondaryVertices = cms.InputTag("hltDeepInclusiveSecondaryVerticesPF"),
 )
 

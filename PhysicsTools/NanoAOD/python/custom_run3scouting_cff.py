@@ -58,6 +58,11 @@ scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTask = cms.Task(scouti
         scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTable)
 scoutingFatCHSJetReclusterMatchGenExtensionTask = cms.Task(scoutingFatCHSJetReclusterMatchGen, scoutingFatCHSJetReclusterMatchGenExtensionTable)
 
+#scoutingSVTask = cms.Task(scoutingTrackReco, hltOnlineBeamSpotESProducer, hltOnlineBeamSpot, hltVerticesPF, hltVerticesPFSelector, hltVerticesPFFilter,
+#        hltDeepInclusiveVertexFinderPF, hltDeepInclusiveSecondaryVerticesPF, hltDeepTrackVertexArbitratorPF, hltDeepInclusiveMergedVerticesPF, scoutingSecondaryVertexTable)
+
+scoutingSVTask = cms.Task(hltOnlineBeamSpotESProducer, hltOnlineBeamSpot, hltDeepInclusiveVertexFinderPF, hltDeepInclusiveSecondaryVerticesPF, 
+        hltDeepTrackVertexArbitratorPF, hltDeepInclusiveMergedVerticesPF, scoutingSecondaryVertexTable)
 
 ###################
 # Trigger Objects #
@@ -119,7 +124,7 @@ def prepareScoutingNanoTaskCommon():
     
     # Scouting derived objects
     #scoutingNanoTaskCommon.add(scoutingPFCandidateTask)
-    scoutingNanoTaskCommon.add(scoutingPFJetCorrectedTask)
+    #scoutingNanoTaskCommon.add(scoutingPFJetCorrectedTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterTask)
     scoutingNanoTaskCommon.add(scoutingPFJetReclusterCorrectionExtensionTask)
     scoutingNanoTaskCommon.add(scoutingCHSJetReclusterTask)
@@ -129,6 +134,13 @@ def prepareScoutingNanoTaskCommon():
     scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterSoftDropMassExtensionTask)
     scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterParticleNetMassExtensionTask)
     scoutingNanoTaskCommon.add(scoutingFatCHSJetReclusterJetSubstructureVariableExtensionTask)
+    
+    scoutingNanoTaskCommon.add(unpackedScoutingObjects)
+    scoutingNanoTaskCommon.add(scoutingTrackRecoTable)
+    scoutingNanoTaskCommon.add(scoutingPFCandidateRecoTable)
+    scoutingNanoTaskCommon.add(onlineBeamSpotTable)
+    scoutingNanoTaskCommon.add(scoutingSVTask)
+    scoutingNanoTaskCommon.add(scoutingPFCandidatePuppiWeights, scoutingPuppiJetRecluster, scoutingPuppiJetReclusterTable)
 
     return scoutingNanoTaskCommon
 
