@@ -29,6 +29,10 @@
 
 #include "SimGeneral/HepPDTRecord/interface/ParticleDataTable.h"
 #include "fastjet/contrib/SoftKiller.hh"
+#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
+#include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
+#include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
+#include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
 
 /*
  * HLTScoutingUnpackProducer unpacks Run3Scouting data formats to their reco format counterparts
@@ -61,6 +65,9 @@ private:
     reco::Vertex createVertex(Run3ScoutingVertex const& scoutingVertex);
     reco::Track createTrack(Run3ScoutingTrack const& scoutingTrack);
     reco::PFCandidate createPFCandidate(Run3ScoutingParticle const& scoutingPFCandidate);
+    bool hasPFTrackDetails(Run3ScoutingParticle const& scoutingPFCandidate);
+    int findCompatibleScoutingTrack(Run3ScoutingParticle const& scoutingPFCandidate, Run3ScoutingVertex const& scoutingPrimaryVertex0, std::unique_ptr<reco::TrackCollection> & recoTrack_collection_ptr);
+    void buildHitPattern(Run3ScoutingParticle const& scoutingPFCandidate, Run3ScoutingTrack const& scoutingTrack, reco::Track & recoTrack);
     std::unique_ptr<reco::Track> createPFTrack(Run3ScoutingParticle const& scoutingPFCandidate, edm::Handle<Run3ScoutingVertexCollection> const& scoutingPrimaryVertex_collection_handle);
     
     // register products for reco object and corresponding Value to Ref to original scouting objects
@@ -82,6 +89,7 @@ private:
     edm::ESGetToken<HepPDT::ParticleDataTable, edm::DefaultRecord> particle_data_table_token_;
 
     bool produce_PFCandidate_;
+    bool produce_PFCandidateMatchTrack_;
     bool produce_PFCHSCandidate_; // CHS = charged hadron subtraction
     bool produce_PFSKCandidate_; // SK = soft killer
     HepPDT::ParticleDataTable const *particle_data_table_;
@@ -103,35 +111,29 @@ HLTScoutingUnpackProducer::HLTScoutingUnpackProducer(edm::ParameterSet const& pa
       scoutingPrimaryVertex_collection_token_(consumes(params.getParameter<edm::InputTag>("scoutingPrimaryVertex"))),
       particle_data_table_token_(esConsumes<HepPDT::ParticleDataTable, edm::DefaultRecord>()),
       produce_PFCandidate_(params.getParameter<bool>("producePFCandidate")),
-      produce_PFCHSCandidate_(params.getParameter<bool>("producePFCHSCandidate")),
-      produce_PFSKCandidate_(params.getParameter<bool>("producePFSKCandidate")){
+      produce_PFCandidateMatchTrack_(params.getParameter<bool>("producePFCandidateMatchTrack")),
+      produce_PFCHSCandidate_(params.getParameter<bool>("producePFCHSCandidate")){
+      //produce_PFSKCandidate_(params.getParameter<bool>("producePFSKCandidate"))
     
-    produces<reco::PFJetCollection>("PFJet");
-    //produces<edm::ValueMap<edm::Ref<Run3ScoutingPFJetCollection>>>("PFJet_ScoutingRef");
-    
-    //recoTrack_collection_token_ = produces<reco::TrackCollection>("Track");
-    //produces<reco::TrackCollection>("Track");
-    //produces<edm::ValueMap<edm::Ref<Run3ScoutingTrackCollection>>>("Track_ScoutingRef");
+    produceWithRef<reco::PFJet, Run3ScoutingPFJet>("PFJet");
+     
     produceWithRef<reco::Track, Run3ScoutingTrack>("Track");
 
-    //produces<reco::VertexCollection>("PrimaryVertex");
-    //produces<Run3ScoutingVertexRefMap>("PrimaryVertex_RefToScouting");
     produceWithRef<reco::Vertex, Run3ScoutingVertex>("PrimaryVertex");
     
     if (produce_PFCandidate_){
-        produces<reco::PFCandidateCollection>("PFCandidate");
-        //produces<edm::ValueMap<edm::Ref<Run3ScoutingParticleCollection>>>("PFCandidate_ScoutingRef");
-        //produces<reco::ValueMap<int>>("PFCandidate_vertexIndex");
-        //producePFCandidateCollection("PFCandidate");
+        produceWithRef<reco::PFCandidate, Run3ScoutingParticle>("PFCandidate");
+    }
+    if (produce_PFCandidateMatchTrack_){
+        produceWithRef<reco::PFCandidate, Run3ScoutingParticle>("PFCandidateMatchTrack");
     }
     if (produce_PFCHSCandidate_){
-        produces<reco::PFCandidateCollection>("PFCHSCandidate");
+        produceWithRef<reco::PFCandidate, Run3ScoutingParticle>("PFCHSCandidate");
     }
     /*if (produce_PFSKCandidate_){
         produces<reco::PFCandidateCollection>("PFSKCandidate");
     }*/
-    if (produce_PFCandidate_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_) {
-        //recoPFTrack_collection_token_ = produces<reco::TrackCollection>("PFTrack"); // reco::track collection from best track parameters of PF
+    if (produce_PFCandidate_ || produce_PFCandidateMatchTrack_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_) {
         produces<reco::TrackCollection>("PFTrack"); // reco::track collection from best track parameters of PF
     }
 }
@@ -146,12 +148,12 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
     // produce reco::PFJet
     edm::Handle<Run3ScoutingPFJetCollection> scoutingPFJet_collection_handle = iEvent.getHandle(scoutingPFJet_collection_token_);
     auto recoPFJet_collection_ptr = std::make_unique<reco::PFJetCollection>();
-    //auto scoutingPFJetRef_collection_ptr = std::make_unique<RefCollection<Run3ScoutingPFJet>>();
+    auto scoutingPFJetRef_collection_ptr = std::make_unique<RefCollection<Run3ScoutingPFJet>>();
     if (scoutingPFJet_collection_handle.isValid()) {
-        //for (size_t scoutingPFJet_index=0; scoutingPFJet_index < scoutingPFJet_collection_handle->size(); scoutingPFJet_index++) {
-        for (auto const& scoutingPFJet: *scoutingPFJet_collection_handle) {
+        for (size_t scoutingPFJet_index = 0; scoutingPFJet_index < scoutingPFJet_collection_handle->size(); scoutingPFJet_index++) {
+            auto &scoutingPFJet = scoutingPFJet_collection_handle->at(scoutingPFJet_index);
             recoPFJet_collection_ptr->push_back(createPFJet(scoutingPFJet));
-            //edm::Ref<Run3ScoutingPFJetCollection>(scoutingPFJet_collection_handle, i);
+            scoutingPFJetRef_collection_ptr->push_back(edm::Ref<Run3ScoutingPFJetCollection>(scoutingPFJet_collection_handle, scoutingPFJet_index));
         }
     }
 
@@ -160,8 +162,7 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
     auto recoPrimaryVertex_collection_ptr = std::make_unique<reco::VertexCollection>();
     auto scoutingPrimaryVertexRef_collection_ptr = std::make_unique<RefCollection<Run3ScoutingVertex>>();
     if (scoutingPrimaryVertex_collection_handle.isValid()) {
-        for (size_t scoutingPrimaryVertex_index=0; scoutingPrimaryVertex_index < scoutingPrimaryVertex_collection_handle->size(); scoutingPrimaryVertex_index++) {
-        //for (auto const& scoutingPrimaryVertex: *scoutingPrimaryVertex_collection_handle) {
+        for (size_t scoutingPrimaryVertex_index = 0; scoutingPrimaryVertex_index < scoutingPrimaryVertex_collection_handle->size(); scoutingPrimaryVertex_index++) {
             auto &scoutingPrimaryVertex = scoutingPrimaryVertex_collection_handle->at(scoutingPrimaryVertex_index);
             recoPrimaryVertex_collection_ptr->push_back(createVertex(scoutingPrimaryVertex));
             scoutingPrimaryVertexRef_collection_ptr->push_back(edm::Ref<Run3ScoutingVertexCollection>(scoutingPrimaryVertex_collection_handle, scoutingPrimaryVertex_index));
@@ -173,9 +174,8 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
     auto recoTrack_collection_ptr = std::make_unique<reco::TrackCollection>();
     auto scoutingTrackRef_collection_ptr = std::make_unique<RefCollection<Run3ScoutingTrack>>();
     if (scoutingTrack_collection_handle.isValid()) {
-        for (size_t scoutingTrack_index=0; scoutingTrack_index < scoutingTrack_collection_handle->size(); scoutingTrack_index++) {
+        for (size_t scoutingTrack_index = 0; scoutingTrack_index < scoutingTrack_collection_handle->size(); scoutingTrack_index++) {
             auto &scoutingTrack = scoutingTrack_collection_handle->at(scoutingTrack_index);
-        //for (auto const& scoutingTrack: *scoutingTrack_collection_handle) {
             recoTrack_collection_ptr->push_back(createTrack(scoutingTrack));
             scoutingTrackRef_collection_ptr->push_back(edm::Ref<Run3ScoutingTrackCollection>(scoutingTrack_collection_handle, scoutingTrack_index));
         }
@@ -183,60 +183,105 @@ void HLTScoutingUnpackProducer::produce(edm::Event& iEvent, edm::EventSetup cons
 
     // produce reco::PFCandidate
     edm::Handle<Run3ScoutingParticleCollection> scoutingPFCandidate_collection_handle = iEvent.getHandle(scoutingPFCandidate_collection_token_);
-    auto recoPFCandidate_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
-    auto recoPFCHSCandidate_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
     auto recoPFTrack_collection_ptr = std::make_unique<reco::TrackCollection>();
-    //reco::TrackRefProd recoTrack_collection_refprod = iEvent.getRefBeforePut(recoTrack_collection_token_);
-    //reco::TrackRefProd recoPFTrack_collection_refprod = iEvent.getRefBeforePut(recoPFTrack_collection_token_);
+    
+    auto recoPFCandidate_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
+    auto recoPFCandidateMatchTrack_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
+    auto recoPFCHSCandidate_collection_ptr = std::make_unique<reco::PFCandidateCollection>();
+
+    auto scoutingPFCandidateRef_collection_ptr = std::make_unique<RefCollection<Run3ScoutingParticle>>();
+    auto scoutingPFCandidateMatchTrackRef_collection_ptr = std::make_unique<RefCollection<Run3ScoutingParticle>>();
+
     if (scoutingPFCandidate_collection_handle.isValid() && (produce_PFCandidate_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_)) {
         reco::TrackRefProd recoTrack_collection_refProd = iEvent.getRefBeforePut<reco::TrackCollection>("Track");
         reco::TrackRefProd recoPFTrack_collection_refProd = iEvent.getRefBeforePut<reco::TrackCollection>("PFTrack");
         particle_data_table_ = iSetup.getHandle(particle_data_table_token_).product();
-        for (auto const& scoutingPFCandidate: *scoutingPFCandidate_collection_handle) {    
+        int found=0;
+        int not_found=0;
+        int not_found_0p8=0;
+        int not_found_1=0;
+        for (size_t scoutingPFCandidate_index = 0; scoutingPFCandidate_index < scoutingPFCandidate_collection_handle->size(); scoutingPFCandidate_index++) {
+            auto &scoutingPFCandidate = scoutingPFCandidate_collection_handle->at(scoutingPFCandidate_index);
+            
+            // create base reco::PFCandidate
             reco::PFCandidate recoPFCandidate = createPFCandidate(scoutingPFCandidate);
-            std::unique_ptr<reco::Track> recoPFTrack_ptr = createPFTrack(scoutingPFCandidate, scoutingPrimaryVertex_collection_handle);
+
             // build track and vertex for output reco::PFCandidate
-            if (recoPFTrack_ptr != nullptr) {
+            if (hasPFTrackDetails(scoutingPFCandidate)) { 
                 // try to search for track built from ScoutingTrack containing more information
-                int recoTrack_index = -1; //findCompatibleScoutingTrack(recoPFTrack_ptr, recoTrack_collection_ptr);
+                int recoTrack_index = findCompatibleScoutingTrack(scoutingPFCandidate, scoutingPrimaryVertex_collection_handle->at(0), recoTrack_collection_ptr);
                 if (recoTrack_index >= 0) { // found
                     reco::TrackRef trackRef(recoTrack_collection_refProd, recoTrack_index);
                     recoPFCandidate.setTrackRef(trackRef);
                     recoPFCandidate.setVertex((recoTrack_collection_ptr->at(recoTrack_index)).vertex());
+                    //std::cout << "Found" << std::endl;
+                    //std::cout << "track pt original: " << scoutingPFCandidate.pt() << " retrieved: " << (recoTrack_collection_ptr->at(recoTrack_index)).pt() << std::endl;
+                    //std::cout << "track eta original: " << scoutingPFCandidate.eta() << " retrieved: " << (recoTrack_collection_ptr->at(recoTrack_index)).eta() << std::endl;
+                    //std::cout << "track phi original: " << scoutingPFCandidate.phi() << " retrieved: " << (recoTrack_collection_ptr->at(recoTrack_index)).phi() << std::endl;
+                    found++;
+                    if (produce_PFCandidateMatchTrack_) {
+                        recoPFCandidateMatchTrack_collection_ptr->push_back(recoPFCandidate);
+                        scoutingPFCandidateMatchTrackRef_collection_ptr->push_back(edm::Ref<Run3ScoutingParticleCollection>(scoutingPFCandidate_collection_handle, scoutingPFCandidate_index));
+                    }
+
+                    buildHitPattern(scoutingPFCandidate, scoutingTrack_collection_handle->at(recoTrack_index), recoTrack_collection_ptr->at(recoTrack_index));
+
                 } else { // not found 
+                    std::unique_ptr<reco::Track> recoPFTrack_ptr = createPFTrack(scoutingPFCandidate, scoutingPrimaryVertex_collection_handle);
                     recoPFTrack_collection_ptr->push_back(*recoPFTrack_ptr);
                     reco::TrackRef trackRef(recoPFTrack_collection_refProd, recoPFTrack_collection_ptr->size() - 1);
                     recoPFCandidate.setTrackRef(trackRef);
                     recoPFCandidate.setVertex(recoPFTrack_ptr->vertex());
+                    if (recoPFTrack_ptr->pt() >= 1) {
+                        not_found_1++;
+                    }
+                    if (recoPFTrack_ptr->pt()>=0.8) {
+                        not_found_0p8++;
+                    }
+                    not_found++;
+                    //std::cout << "Not Found" << std::endl;
+                    //std::cout << "track pt original: " << scoutingPFCandidate.pt() << " retrieved: " << recoPFTrack_ptr->pt() << std::endl;
+                    //std::cout << "track eta original: " << scoutingPFCandidate.eta() << " retrieved: " << recoPFTrack_ptr->eta() << std::endl;
+                    //std::cout << "track phi original: " << scoutingPFCandidate.phi() << " retrieved: " << recoPFTrack_ptr->phi() << std::endl;
+                }
+            } else {
+                if (produce_PFCandidateMatchTrack_) {
+                    recoPFCandidateMatchTrack_collection_ptr->push_back(recoPFCandidate);
+                    scoutingPFCandidateMatchTrackRef_collection_ptr->push_back(edm::Ref<Run3ScoutingParticleCollection>(scoutingPFCandidate_collection_handle, scoutingPFCandidate_index));
                 }
             }
             recoPFCandidate_collection_ptr->push_back(recoPFCandidate);
-            if (produce_PFCHSCandidate_ && (scoutingPFCandidate.vertex() >= 0)) {
-                recoPFCHSCandidate_collection_ptr->push_back(recoPFCandidate);
+            scoutingPFCandidateRef_collection_ptr->push_back(edm::Ref<Run3ScoutingParticleCollection>(scoutingPFCandidate_collection_handle, scoutingPFCandidate_index));
+            if (produce_PFCHSCandidate_) {
+                // https://github.com/cms-sw/cmssw/blob/master/CommonTools/ParticleFlow/python/pfCHS_cff.py
+                // https://github.com/cms-sw/cmssw/blob/master/DataFormats/PatCandidates/interface/PackedCandidate.h#L718-L731
+                if (scoutingPFCandidate.vertex() == 0) {
+                    recoPFCHSCandidate_collection_ptr->push_back(recoPFCandidate);
+                }
             }
         }
+    //    std::cout << "Found: " << found << " Not Found: " << not_found << " Not Found pt>1 GeV: " << not_found_1 << " Not Found pt>0.8 GeV: " << not_found_0p8 << std::endl;
     }
 
-    // put products back in Event
-    iEvent.put(std::move(recoPFJet_collection_ptr), "PFJet");
+    // put products in Event
+    putWithRef<reco::PFJet, Run3ScoutingPFJet>(iEvent, "PFJet", recoPFJet_collection_ptr, scoutingPFJetRef_collection_ptr);
 
-    //iEvent.put(std::move(recoPrimaryVertex_collection_ptr), "PrimaryVertex");
     putWithRef<reco::Vertex, Run3ScoutingVertex>(iEvent, "PrimaryVertex", recoPrimaryVertex_collection_ptr, scoutingPrimaryVertexRef_collection_ptr);
     
-    //iEvent.put(std::move(recoTrack_collection_ptr), "Track");
     putWithRef<reco::Track, Run3ScoutingTrack>(iEvent, "Track", recoTrack_collection_ptr, scoutingTrackRef_collection_ptr);
     
-    if (produce_PFCandidate_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_) {
-        //std::cout << "PFTrack put " << produce_PFCandidate_ << std::endl;
+    if (produce_PFCandidate_ || produce_PFCandidateMatchTrack_ || produce_PFCHSCandidate_ || produce_PFSKCandidate_) {
         iEvent.put(std::move(recoPFTrack_collection_ptr), "PFTrack");
     }
     if (produce_PFCandidate_) {
-        iEvent.put(std::move(recoPFCandidate_collection_ptr), "PFCandidate");
+        putWithRef<reco::PFCandidate, Run3ScoutingParticle>(iEvent, "PFCandidate", recoPFCandidate_collection_ptr, scoutingPFCandidateRef_collection_ptr);
+    }
+    if (produce_PFCandidateMatchTrack_) {
+        putWithRef<reco::PFCandidate, Run3ScoutingParticle>(iEvent, "PFCandidateMatchTrack", recoPFCandidateMatchTrack_collection_ptr, scoutingPFCandidateMatchTrackRef_collection_ptr);
     }
     if (produce_PFCHSCandidate_) {
         iEvent.put(std::move(recoPFCHSCandidate_collection_ptr), "PFCHSCandidate");
     }
-    
 }
 
 reco::PFJet HLTScoutingUnpackProducer::createPFJet(Run3ScoutingPFJet const& scoutingPFJet) {
@@ -330,17 +375,17 @@ reco::Track HLTScoutingUnpackProducer::createTrack(Run3ScoutingTrack const& scou
     std::vector<float> cov_vec(15); // 5*(5+1)/2 = 15
     cov_vec[0] = scoutingTrack.tk_qoverp_Error() * scoutingTrack.tk_qoverp_Error(); // cov(0, 0)
     cov_vec[1] = scoutingTrack.tk_qoverp_lambda_cov(); // cov(0, 1)
-    cov_vec[2] = scoutingTrack.tk_qoverp_phi_cov(); // cov(0, 2)
-    cov_vec[3] = scoutingTrack.tk_qoverp_dxy_cov(); // cov(0, 3)
-    cov_vec[4] = scoutingTrack.tk_qoverp_dsz_cov(); // cov(0, 4)
-    cov_vec[5] = scoutingTrack.tk_lambda_Error() * scoutingTrack.tk_lambda_Error(); // cov(1, 1)
-    cov_vec[6] = scoutingTrack.tk_lambda_phi_cov(); // cov(1, 2)
+    cov_vec[3] = scoutingTrack.tk_qoverp_phi_cov(); // cov(0, 2)
+    cov_vec[6] = scoutingTrack.tk_qoverp_dxy_cov(); // cov(0, 3)
+    cov_vec[10] = scoutingTrack.tk_qoverp_dsz_cov(); // cov(0, 4)
+    cov_vec[2] = scoutingTrack.tk_lambda_Error() * scoutingTrack.tk_lambda_Error(); // cov(1, 1)
+    cov_vec[4] = scoutingTrack.tk_lambda_phi_cov(); // cov(1, 2)
     cov_vec[7] = scoutingTrack.tk_lambda_dxy_cov(); // cov(1, 3)
-    cov_vec[8] = scoutingTrack.tk_lambda_dsz_cov(); // cov(1, 4)
-    cov_vec[9] = scoutingTrack.tk_phi_Error() * scoutingTrack.tk_phi_Error(); // cov(2, 2) 
-    cov_vec[10] = scoutingTrack.tk_phi_dxy_cov(); // cov(2, 3)
-    cov_vec[11] = scoutingTrack.tk_phi_dsz_cov(); // cov(2, 4)
-    cov_vec[12] = scoutingTrack.tk_dxy_Error() * scoutingTrack.tk_dxy_Error(); // cov(3, 3)
+    cov_vec[11] = scoutingTrack.tk_lambda_dsz_cov(); // cov(1, 4)
+    cov_vec[5] = scoutingTrack.tk_phi_Error() * scoutingTrack.tk_phi_Error(); // cov(2, 2) 
+    cov_vec[8] = scoutingTrack.tk_phi_dxy_cov(); // cov(2, 3)
+    cov_vec[12] = scoutingTrack.tk_phi_dsz_cov(); // cov(2, 4)
+    cov_vec[9] = scoutingTrack.tk_dxy_Error() * scoutingTrack.tk_dxy_Error(); // cov(3, 3)
     cov_vec[13] = scoutingTrack.tk_dxy_dsz_cov(); // cov(3, 4)
     cov_vec[14] = scoutingTrack.tk_dsz_Error() * scoutingTrack.tk_dsz_Error(); // cov(4, 4)
     reco::TrackBase::CovarianceMatrix cov(cov_vec.begin(), cov_vec.end());
@@ -381,33 +426,252 @@ reco::PFCandidate HLTScoutingUnpackProducer::createPFCandidate(Run3ScoutingParti
     return reco::PFCandidate(charge, p4, dummy.translatePdgIdToType(pdgId));
 }
 
-std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3ScoutingParticle const& scoutingPFCandidate,
-                                                                      edm::Handle<Run3ScoutingVertexCollection> const& scoutingPrimaryVertex_collection_handle) {
+bool HLTScoutingUnpackProducer::hasPFTrackDetails(Run3ScoutingParticle const& scoutingPFCandidate) { 
     // retrive pdgId
     int pdgId = scoutingPFCandidate.pdgId();
     // no track for photon(22), neutral hadron(130), h_HF (1), egamma_HF (2), X(0)
     // see https://github.com/cms-sw/cmssw/blob/master/DataFormats/ParticleFlowCandidate/src/PFCandidate.cc#L231-L276
     if (pdgId == 22 || pdgId == 130 || pdgId == 1 || pdgId == 2 || pdgId == 0) {
-      return nullptr;
+      return false;
     }
 
-    // set track charge from PFCandidate's charge
-    int charge;
-    auto particle_data_ptr = particle_data_table_->particle(HepPDT::ParticleID(pdgId)); // particle data
-    if ( particle_data_ptr != nullptr) {
-        charge = particle_data_ptr->charge();
-    } else {
-        return nullptr;
+    if (scoutingPFCandidate.normchi2() >= 900) { // 999
+        return false;
     }
+ 
+    auto particle_data_ptr = particle_data_table_->particle(HepPDT::ParticleID(pdgId)); // particle data
+    if (particle_data_ptr == nullptr) {
+        return false;
+    }
+
+    return true;
+}
+
+int HLTScoutingUnpackProducer::findCompatibleScoutingTrack(Run3ScoutingParticle const& scoutingPFCandidate, Run3ScoutingVertex const& scoutingPrimaryVertex0, std::unique_ptr<reco::TrackCollection> & recoTrack_collection_ptr) {
+    int index = 0;
+    reco::TrackBase::Point v0(scoutingPrimaryVertex0.x(), scoutingPrimaryVertex0.y(), scoutingPrimaryVertex0.z());
+
+    // retrieve track parameters from PFCandidate
+    float pt = scoutingPFCandidate.trk_pt();
+    float eta = scoutingPFCandidate.trk_eta();
+    float phi = scoutingPFCandidate.trk_phi();
+    if (scoutingPFCandidate.relative_trk_vars()){
+        pt += scoutingPFCandidate.pt();
+        eta += scoutingPFCandidate.eta();
+        phi += scoutingPFCandidate.phi();
+    }
+    float normchi2 = scoutingPFCandidate.normchi2();
+    float dxy = scoutingPFCandidate.dxy();
+    float dz = scoutingPFCandidate.dz();
+    float dxysig = scoutingPFCandidate.dxysig();
+    float dzsig = scoutingPFCandidate.dzsig();
+
+    // https://www.boost.org/doc/libs/1_35_0/libs/test/doc/components/test_tools/floating_point_comparison.html
+    auto is_close = [](float a, float b, float relative_tolerance) -> bool {
+        return fabs(a-b) <= relative_tolerance * fmax(fabs(a), fabs(b));
+    };
+
+    for (auto const& recoTrack: *recoTrack_collection_ptr) { 
+        if (is_close(normchi2, recoTrack.normalizedChi2(), 0.001)
+            && is_close(dxy, recoTrack.dxy(v0), 0.5)
+            && is_close(dz, recoTrack.dz(v0), 0.5)
+            && is_close(dxysig, recoTrack.dxy(v0)/recoTrack.dxyError(), 0.5)
+            && is_close(dzsig, recoTrack.dz(v0)/recoTrack.dzError(), 0.5)
+            && is_close(pt, recoTrack.pt(), 0.000001)
+            && is_close(eta, recoTrack.eta(), 0.000001)
+            && is_close(phi, recoTrack.phi(), 0.000001)
+           ) {
+        /*    std::cout << "Found" << std::endl;
+            std::cout << "track normchi2: " << scoutingPFCandidate.normchi2() << " retrived: " << recoTrack.normalizedChi2() << std::endl;
+            std::cout << "track dxy: " << scoutingPFCandidate.dxy() << " retrived: " << recoTrack.dxy(v0) << std::endl;
+            std::cout << "track dz: " << scoutingPFCandidate.dz() << " retrived: " << recoTrack.dz(v0) << std::endl;
+            std::cout << "track dxysig: " << scoutingPFCandidate.dxysig() << " retrieved: " << recoTrack.dxy(v0)/recoTrack.dxyError() << std::endl;
+            std::cout << "track dzsig: " << scoutingPFCandidate.dzsig() << " retrieved: " << recoTrack.dz(v0)/recoTrack.dzError() << std::endl;
+            std::cout << "track pt original: " << pt << " retrieved: " << recoTrack.pt() << std::endl;
+            std::cout << "track eta original: " << eta << " retrieved: " << recoTrack.eta() << std::endl;
+            std::cout << "track phi original: " << phi << " retrieved: " << recoTrack.phi() << std::endl;
+         */ 
+            return index;
+        }
+        index++;
+    }
+    return -1;
+}
+
+// example from https://github.com/cms-sw/cmssw/blob/master/DataFormats/PatCandidates/src/PackedCandidate.cc#L219
+void HLTScoutingUnpackProducer::buildHitPattern(Run3ScoutingParticle const& scoutingPFCandidate, Run3ScoutingTrack const& scoutingTrack, reco::Track & recoTrack) {
+    // retrieve information from scoutingPFCandidate
+    //int8_t lost_inner_hits = scoutingPFCandidate.lostInnerHits();
+    //std::cout << "lostInnerHit: " << (int)lost_inner_hits <<  " test: " << (lost_inner_hits == pat::PackedCandidate::validHitInFirstPixelBarrelLayer) << std::endl;
+    auto lost_inner_hits = static_cast<pat::PackedCandidate::LostInnerHits>(static_cast<int8_t>(scoutingPFCandidate.lostInnerHits()));
+
+
+    // retrieve information from scoutingTrack
+    int number_of_pixel_hits = scoutingTrack.tk_nValidPixelHits();
+    int number_of_strip_hits = scoutingTrack.tk_nValidStripHits();
+    int number_of_layers_with_measurement = scoutingTrack.tk_nTrackerLayersWithMeasurement(); // pixel + strip number of layers?
+    //float abs_eta = fabs(scoutingTrack.tk_eta());
+
+    // pixel has 7 layers: 4 in BPIX + 3 FPIX
+    int number_of_pxb_layers = 4;
+    int number_of_pxf_layers = 3;
+    int number_of_pixel_layers = number_of_pxb_layers + number_of_pxf_layers;
+    // we assume the number of pixel layers with measurement is min(number_of_pixel_layers, number_of_layers_with_measurement)
+    // in fact, even if we have number of layers with measurement more than number of pixel layers, we can have pixel layers with measurement less than number of pixel layers
+    // but we don't have access to this information, so we will make this assumption here
+    int number_of_pixel_layers_with_measurement = number_of_layers_with_measurement > number_of_pixel_layers ? number_of_pixel_layers : number_of_layers_with_measurement; 
+    // number of pixel layers with measurement cannot exceed number of pixel hits
+    number_of_pixel_layers_with_measurement = number_of_layers_with_measurement > number_of_pixel_hits ? number_of_pixel_hits : number_of_pixel_layers_with_measurement;
+    
+    // strip has 22 layers: 4 TIB + 3 TID + 6 TOB + 9 TEC
+    int number_of_tib_layers = 4;
+    int number_of_tid_layers = 3;
+    int number_of_tob_layers = 6;
+    int number_of_tec_layers = 9;
+    int number_of_strip_layers = number_of_tib_layers + number_of_tob_layers + number_of_tid_layers + number_of_tec_layers;
+
+    // assume the remaining layers with measuremnet are in strip
+    int number_of_strip_layers_with_measurement = number_of_layers_with_measurement - number_of_pixel_layers_with_measurement;
+    // number of strip layers with measurement cannot exceed number of strip layers
+    // in fact, this it exceeds, we should throw error
+    number_of_strip_layers_with_measurement = number_of_strip_layers_with_measurement > number_of_strip_layers ? number_of_strip_layers : number_of_strip_layers_with_measurement;
+    // number of strip layers with measurement cannot exceed number of strip hits
+    number_of_strip_layers_with_measurement = number_of_strip_layers_with_measurement > number_of_strip_hits ? number_of_strip_hits : number_of_strip_layers_with_measurement;
+
+    int number_of_hits = number_of_pixel_hits + number_of_strip_hits;
+    
+    /*
+    std::cout << "eta: " << scoutingTrack.tk_eta() << " pixel layers: " << number_of_pixel_layers << " pixel with measurement: " << number_of_pixel_layers_with_measurement << " strip layers: " << number_of_strip_layers << " strip layers with measurement: " << number_of_strip_layers_with_measurement;
+    std::cout << " layers with measurement true: " << number_of_layers_with_measurement << " guess: " << number_of_pixel_layers_with_measurement + number_of_strip_layers_with_measurement << " remain: " << number_of_layers_with_measurement - number_of_pixel_layers_with_measurement - number_of_strip_layers_with_measurement;
+    std::cout << " ndof: "  << ndof << " number of hits: " << number_of_hits << " pixel hits: " << number_of_pixel_hits << " strip hits: " << number_of_strip_hits << " pixel+strip hits: " << number_of_pixel_hits + number_of_strip_hits;
+    std::cout << std::endl;
+    */
+    
+    // now, proceed similar to PackedCandidate
+    uint16_t first_hit = 0; // assume 0
+
+    int i = 0;
+
+    if (first_hit == 0) {
+        if (lost_inner_hits == pat::PackedCandidate::validHitInFirstPixelBarrelLayer) {
+            recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, 1, 0, TrackingRecHit::valid);
+            i = 1;
+        }
+    } else {
+        recoTrack.appendHitPattern(first_hit, TrackingRecHit::valid);
+        if (reco::HitPattern::pixelHitFilter(first_hit)) {
+            i = 1;
+        }
+    }
+
+    // add hits to match the number of layers and validHitInFirstPixelBarrelLayer
+    if (lost_inner_hits == pat::PackedCandidate::validHitInFirstPixelBarrelLayer) {
+        for (; i < number_of_pixel_layers_with_measurement; i++) {
+            if (i <= 3) {
+                recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, i + 1, 0, TrackingRecHit::valid);
+            } else {
+                recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelEndcap, i - 3, 0, TrackingRecHit::valid);
+            }
+        }
+    } else {
+        int i_offset = 0;
+        if (first_hit != 0 && reco::HitPattern::pixelHitFilter(first_hit)) {
+            i_offset = reco::HitPattern::getLayer(first_hit);
+            if (reco::HitPattern::getSubStructure(first_hit) == PixelSubdetector::PixelEndcap) {
+                i_offset += 3;
+            }
+        } else {
+            i_offset = 1;
+        }
+        for (; i < number_of_pixel_layers_with_measurement; i++) {
+            if (i + i_offset <= 2) {
+                recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, i + i_offset + 1, 0, TrackingRecHit::valid);
+            } else {
+                recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelEndcap, i + i_offset + 1 - 3, 0, TrackingRecHit::valid);
+            } 
+        }
+    }
+
+    // add extra hits (overlaps, etc), all on the first layer with a hit
+    // to avoid increasing the layer count
+    for (; i < number_of_pixel_hits; i++) {
+        if (first_hit != 0 && reco::HitPattern::pixelHitFilter(first_hit)) {
+            recoTrack.appendTrackerHitPattern(reco::HitPattern::getSubStructure(first_hit), reco::HitPattern::getLayer(first_hit), 0, TrackingRecHit::valid);
+        } else {
+            recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, lost_inner_hits == pat::PackedCandidate::validHitInFirstPixelBarrelLayer ? 1 : 2, 0, TrackingRecHit::valid);
+        }
+    }
+ 
+    // now start adding strip layers, putting one hit on each layer
+    // we don't know what the layers where, so we just start with 4 TIB, then 6 TOB, then 9 TEC, and then 3 TID
+    if (first_hit != 0 && reco::HitPattern::stripHitFilter(first_hit)) {
+        i += 1;
+    }
+    int sl_offset = 0;
+    if (first_hit != 0 && reco::HitPattern::stripHitFilter(first_hit)) {
+        sl_offset = reco::HitPattern::stripHitFilter(first_hit) - 1;
+        if (reco::HitPattern::getSubStructure(first_hit) == StripSubdetector::TID)
+            sl_offset += 4;
+        if (reco::HitPattern::getSubStructure(first_hit) == StripSubdetector::TOB)
+            sl_offset += 7;
+        if (reco::HitPattern::getSubStructure(first_hit) == StripSubdetector::TEC)
+            sl_offset += 13;
+    }
+
+    for (int sl = sl_offset; sl < number_of_strip_layers_with_measurement + sl_offset; sl++, i++) {
+        if (sl < 4) {
+            recoTrack.appendTrackerHitPattern(StripSubdetector::TIB, sl + 1, 1, TrackingRecHit::valid);
+        } else if (sl < 4 + 3) {
+            recoTrack.appendTrackerHitPattern(StripSubdetector::TID, (sl - 4) + 1, 1, TrackingRecHit::valid);
+        } else if (sl < 7 + 6) {
+            recoTrack.appendTrackerHitPattern(StripSubdetector::TOB, (sl - 7) + 1, 1, TrackingRecHit::valid);
+        } else if (sl < 13 + 9) {
+            recoTrack.appendTrackerHitPattern(StripSubdetector::TEC, (sl - 13) + 1, 1, TrackingRecHit::valid);
+        } else {
+            break;
+        }
+    }
+
+    for (; i < number_of_hits; i++) {
+        if (reco::HitPattern::stripHitFilter(first_hit)) {
+            recoTrack.appendTrackerHitPattern(reco::HitPattern::getSubStructure(first_hit), reco::HitPattern::getLayer(first_hit), 1, TrackingRecHit::valid);
+        } else {
+            recoTrack.appendTrackerHitPattern(StripSubdetector::TIB, 1, 1, TrackingRecHit::valid);
+        }
+    }
+
+    switch (lost_inner_hits) {
+        case pat::PackedCandidate::validHitInFirstPixelBarrelLayer:
+            break;
+        case pat::PackedCandidate::noLostInnerHits:
+            break;
+        case pat::PackedCandidate::oneLostInnerHit:
+            recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, 1, 0, TrackingRecHit::missing_inner);
+            break;
+        case pat::PackedCandidate::moreLostInnerHits:
+            recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, 1, 0, TrackingRecHit::missing_inner);
+            recoTrack.appendTrackerHitPattern(PixelSubdetector::PixelBarrel, 2, 0, TrackingRecHit::missing_inner);
+            break;
+    };
+    
+    //std::cout << "pixel hits expected: " << number_of_pixel_hits << " get: " << recoTrack.hitPattern().numberOfValidPixelHits() << " strip hits expected: " << number_of_strip_hits << " get: " << recoTrack.hitPattern().numberOfValidStripHits();
+    //std::cout << " layers with measurement expect: " << number_of_layers_with_measurement << " get: " << recoTrack.hitPattern().trackerLayersWithMeasurement() << std::endl;
+    // 
+    // set quality mask from PFCandidate
+    recoTrack.setQualityMask(static_cast<int8_t>(scoutingPFCandidate.quality()));
+    //std::cout << "quality: " << (int)quality << " isLoose: " << dummy.quality(reco::TrackBase::loose) << " isHighpurity: " << dummy.quality(reco::TrackBase::highPurity) << std::endl;
+}
+
+std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3ScoutingParticle const& scoutingPFCandidate,
+                                                                      edm::Handle<Run3ScoutingVertexCollection> const& scoutingPrimaryVertex_collection_handle) {
+    
+    int pdgId = scoutingPFCandidate.pdgId(); 
+    int charge = particle_data_table_->particle(HepPDT::ParticleID(pdgId))->charge();
 
     // fill chi2 and ndof
     // only save normalized chi2 = chi2/ndof is saved, assume ndof = 1
     float chi2 = scoutingPFCandidate.normchi2();
     int ndof = 1;
-
-    if (chi2 == 999) {
-        return nullptr;
-    }
 
     // retrieve track parameters
     float pt = scoutingPFCandidate.trk_pt();
@@ -434,12 +698,15 @@ std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3Scouti
     float dxyError = dxy / scoutingPFCandidate.dxysig();
     float dzError = dz / scoutingPFCandidate.dzsig();
     float dszError = dzError * pt/p;
-    cov_vec[12] = dxyError * dxyError;
+    //cov_vec[0] = 999; 
+    //cov_vec[2] = 999;
+    //cov_vec[5] = 999;
+    cov_vec[9] = dxyError * dxyError;
     cov_vec[14] = dszError * dszError;
     reco::TrackBase::CovarianceMatrix cov(cov_vec.begin(), cov_vec.end());
 
     reco::TrackBase::TrackAlgorithm algo(reco::TrackBase::undefAlgorithm); // undefined
-    reco::TrackBase::TrackQuality quality(reco::TrackBase::confirmed); // confirmed FIXME: change to use scoutingPFCandidate.quality()
+    reco::TrackBase::TrackQuality quality(reco::TrackBase::undefQuality); // undefined
 
     // the rests are default: t0 = 0, beta = 0, covt0t0 = -1, covbetabeta = -1
 
@@ -458,6 +725,8 @@ std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3Scouti
             && fabs(recoTrack_ptr->dxy(pv0_point)/recoTrack_ptr->dxyError() - scoutingPFCandidate.dxysig()) < epsilon
             && fabs(recoTrack_ptr->dz(pv0_point) - scoutingPFCandidate.dz()) < epsilon
             && fabs(recoTrack_ptr->dz(pv0_point)/recoTrack_ptr->dzError() - scoutingPFCandidate.dzsig()) < epsilon) {
+            // set quality
+            recoTrack_ptr->setQualityMask(static_cast<int8_t>(scoutingPFCandidate.quality()));
             return recoTrack_ptr;
         }
     }
@@ -466,7 +735,12 @@ std::unique_ptr<reco::Track> HLTScoutingUnpackProducer::createPFTrack(Run3Scouti
     float vy = pv0.y() + fabs(dxy)*cos(phi);
     float vz = pv0.z() + dz;
     reco::TrackBase::Point referencePoint(vx, vy, vz);
-    return std::make_unique<reco::Track>(chi2, ndof, referencePoint, momentum, charge, cov, algo, quality);
+    // create reco::track
+    auto recoTrack_ptr = std::make_unique<reco::Track>(chi2, ndof, referencePoint, momentum, charge, cov, algo, quality);
+    // set quality
+    recoTrack_ptr->setQualityMask(static_cast<int8_t>(scoutingPFCandidate.quality()));
+
+    return recoTrack_ptr;
 }
 
 template <typename RecoObjectType, typename ScoutingObjectType>
@@ -490,6 +764,7 @@ void HLTScoutingUnpackProducer::fillDescriptions(edm::ConfigurationDescriptions&
     desc.add<edm::InputTag>("scoutingPrimaryVertex", edm::InputTag("hltScoutingPrimaryVertex"));
     
     desc.add<bool>("producePFCandidate", true);
+    desc.add<bool>("producePFCandidateMatchTrack", false)->setComment("if PFCandidate has track, keep only ones that can be matched to track");
     desc.add<bool>("producePFCHSCandidate", false);
     desc.add<bool>("producePFSKCandidate", false);
 
