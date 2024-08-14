@@ -124,4 +124,25 @@
   <class name="edm::Wrapper<std::vector<ScoutingPhoton> >"/>
   <class name="edm::Wrapper<std::vector<ScoutingTrack> >"/> 
   <class name="edm::Wrapper<std::vector<ScoutingVertex> >"/>
+  <!-- -->
+  <class name="edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex>"/>
+  <class name="edm::Ref<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex> >"/>
+  <class name="std::vector<edm::Ref<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex> > >"/>
+  <class name="edm::ValueMap<edm::Ref<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex> > >"/>
+  <class name="edm::Wrapper<edm::ValueMap<edm::Ref<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingVertex>,Run3ScoutingVertex> > > >"/>
+  <class name="edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack>"/>
+  <class name="edm::Ref<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack> >"/>
+  <class name="std::vector<edm::Ref<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack> > >"/>
+  <class name="edm::ValueMap<edm::Ref<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack> > >"/>
+  <class name="edm::Wrapper<edm::ValueMap<edm::Ref<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingTrack>,Run3ScoutingTrack> > > >"/>
+  <class name="edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet>"/>
+  <class name="edm::Ref<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet> >"/>
+  <class name="std::vector<edm::Ref<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet> > >"/>
+  <class name="edm::ValueMap<edm::Ref<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet> > >"/>
+  <class name="edm::Wrapper<edm::ValueMap<edm::Ref<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingPFJet>,Run3ScoutingPFJet> > > >"/>
+  <class name="edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle>"/>
+  <class name="edm::Ref<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle> >"/>
+  <class name="std::vector<edm::Ref<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle> > >"/>
+  <class name="edm::ValueMap<edm::Ref<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle> > >"/>
+  <class name="edm::Wrapper<edm::ValueMap<edm::Ref<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle,edm::refhelper::FindUsingAdvance<std::vector<Run3ScoutingParticle>,Run3ScoutingParticle> > > >"/>
 </lcgdict>
