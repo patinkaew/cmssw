@@ -15,9 +15,15 @@ typedef SimpleFlatTableProducer<Run3ScoutingElectron> SimpleRun3ScoutingElectron
 #include "DataFormats/Scouting/interface/Run3ScoutingTrack.h"
 typedef SimpleFlatTableProducer<Run3ScoutingTrack> SimpleRun3ScoutingTrackFlatTableProducer;
 
+#include "DataFormats/Common/interface/Ref.h"
+
+#include "DataFormats/TrackReco/interface/Track.h"
+typedef SimpleTypedExternalFlatTableProducer<reco::Track, edm::Ref<std::vector<Run3ScoutingTrack>>> SimpleTrack2Run3ScoutingTrackFlatTableProducer;
+
 #include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(SimpleRun3ScoutingVertexFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingPhotonFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingMuonFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingElectronFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingTrackFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleTrack2Run3ScoutingTrackFlatTableProducer);
