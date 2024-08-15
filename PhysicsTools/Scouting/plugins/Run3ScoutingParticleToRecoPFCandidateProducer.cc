@@ -125,7 +125,9 @@ void Run3ScoutingParticleToRecoPFCandidateProducer::createPFCandidates(
     std::unique_ptr<reco::PFCandidateCollection> &pfcands) {
   for (unsigned int icand = 0; icand < scoutingparticleHandle->size(); ++icand) {
     auto &scoutingparticle = (*scoutingparticleHandle)[icand];
-
+    
+    //int abs_pdgId = abs(scoutingparticle.pdgId());
+    //if (use_CHS_ and (abs_pdgId == 211 || abs_pdgId == 11 || abs_pdgId == 13) and !(scoutingparticle.vertex() == 0))
     if (use_CHS_ and scoutingparticle.vertex() > 0)
       continue;
 
