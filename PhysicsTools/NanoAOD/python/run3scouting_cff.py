@@ -565,18 +565,18 @@ hltAK4PFCorrector = cms.EDProducer("ChainedJetCorrectorProducer",
 
 # translation from Run3ScoutingPFJet to reco::PFJet
 # this is needed for applying JEC
-scoutingPFJetReco = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
-    src = cms.InputTag("hltScoutingPFPacker"),
-)
+#scoutingPFJetReco = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
+#    src = cms.InputTag("hltScoutingPFPacker"),
+#)
 
 scoutingPFJetCorrected = cms.EDProducer("CorrectedPFJetProducer",
     correctors = cms.VInputTag(["hltAK4PFCorrector"]),
-    src = cms.InputTag("scoutingPFJetReco"),
+    src = cms.InputTag("unpackedScoutingObjects", "PFJet"),
     saveJECFactor = cms.untracked.bool(True),
 )
 
 scoutingPFJetCorrectedTable = scoutingPFJetReclusterTable.clone(
-    src = cms.InputTag("scoutingPFJetReco"),
+    src = cms.InputTag("unpackedScoutingObjects", "PFJet"),
     name = cms.string("ScoutingPFJet"),
     cut = cms.string(""),
     doc = cms.string("Scouting PFJet"),
@@ -593,6 +593,7 @@ scoutingPFJetReclusterCorrected = cms.EDProducer( "CorrectedPFJetProducer",
 
 scoutingPFJetReclusterCorrectionExtensionTable = scoutingPFJetReclusterTable.clone(
     extension = cms.bool(True),
+    variables = cms.PSet(),
     externalVariables = cms.PSet(
         jecFactor = ExtVar(cms.InputTag("scoutingPFJetReclusterCorrected", "jecFactor"), "double", doc="factor to get to corrected pT")
     ),
@@ -707,10 +708,10 @@ scoutingPFJetReclusterMatchGenExtensionTable = cms.EDProducer("SimplePFJetFlatTa
     cut = cms.string(""),
     singleton = cms.bool(False),
     extension = cms.bool(True),
+    variables = cms.PSet(),
     externalVariables = cms.PSet(
         genJetIdx = ExtVar(cms.InputTag("scoutingPFJetReclusterMatchGen"), int, doc="gen jet idx"),
     ),
-    variables = cms.PSet(),
 )
 
 scoutingCHSJetReclusterMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
@@ -726,10 +727,10 @@ scoutingCHSJetReclusterMatchGenExtensionTable = cms.EDProducer("SimplePFJetFlatT
     cut = cms.string(""),
     singleton = cms.bool(False),
     extension = cms.bool(True),
+    variables = cms.PSet(),
     externalVariables = cms.PSet(
         genJetIdx = ExtVar(cms.InputTag("scoutingPFJetReclusterMatchGen"), int, doc="gen jet idx"),
     ),
-    variables = cms.PSet(),
 )
 
 scoutingFatCHSJetReclusterMatchGen = cms.EDProducer("RecoJetToGenJetDeltaRValueMapProducer",
@@ -745,10 +746,10 @@ scoutingFatCHSJetReclusterMatchGenExtensionTable = cms.EDProducer("SimpleCandida
     cut = cms.string(""),
     singleton = cms.bool(False),
     extension = cms.bool(True),
+    variables = cms.PSet(),
     externalVariables = cms.PSet(
         genJetAK8Idx = ExtVar(cms.InputTag("scoutingFatCHSJetReclusterMatchGen"), int, doc="gen jet idx"),
     ),
-    variables = cms.PSet(),
 )
 
 ##################################
