@@ -526,3 +526,92 @@ ak8ScoutingJetExtTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
       ),
       variables = cms.PSet(),
   )
+
+# AXOL1TL
+
+# unpack L1 information
+from EventFilter.L1TRawToDigi.gtStage2Digis_cfi import gtStage2Digis
+gtStage2DigisScouting = gtStage2Digis.clone(InputLabel="hltFEDSelectorL1")
+
+# copied from HLT menu
+GlobalParametersRcdSourceScouting = cms.ESSource( "EmptyESSource",
+    recordName = cms.string( "L1TGlobalParametersRcd" ),
+    iovIsRunNotTime = cms.bool( True ),
+    firstValid = cms.vuint32( 1 )
+)
+
+GlobalParametersScouting = cms.ESProducer( "StableParametersTrivialProducer",
+  TotalBxInEvent = cms.int32( 5 ),
+  NumberPhysTriggers = cms.uint32( 512 ),
+  NumberL1Muon = cms.uint32( 8 ),
+  NumberL1EGamma = cms.uint32( 12 ),
+  NumberL1Jet = cms.uint32( 12 ),
+  NumberL1Tau = cms.uint32( 12 ),
+  NumberChips = cms.uint32( 1 ),
+  PinsOnChip = cms.uint32( 512 ),
+  OrderOfChip = cms.vint32( 1 ),
+  NumberL1IsoEG = cms.uint32( 4 ),
+  NumberL1JetCounts = cms.uint32( 12 ),
+  UnitLength = cms.int32( 8 ),
+  NumberL1ForJet = cms.uint32( 4 ),
+  IfCaloEtaNumberBits = cms.uint32( 4 ),
+  IfMuEtaNumberBits = cms.uint32( 6 ),
+  NumberL1TauJet = cms.uint32( 4 ),
+  NumberL1Mu = cms.uint32( 4 ),
+  NumberConditionChips = cms.uint32( 1 ),
+  NumberPsbBoards = cms.int32( 7 ),
+  NumberL1CenJet = cms.uint32( 4 ),
+  PinsOnConditionChip = cms.uint32( 512 ),
+  NumberL1NoIsoEG = cms.uint32( 4 ),
+  NumberTechnicalTriggers = cms.uint32( 64 ),
+  NumberPhysTriggersExtended = cms.uint32( 64 ),
+  WordLength = cms.int32( 64 ),
+  OrderConditionChip = cms.vint32( 1 ),
+  appendToDataLabel = cms.string( "" )
+)
+
+# L1TFlobalProducer, adapted from HLT menu
+gtStage2ObjectMapScouting = cms.EDProducer( "L1TGlobalProducer",
+    MuonInputTag = cms.InputTag( 'gtStage2DigisScouting','Muon' ),
+    MuonShowerInputTag = cms.InputTag( 'gtStage2DigisScouting','MuonShower' ),
+    EGammaInputTag = cms.InputTag( 'gtStage2DigisScouting','EGamma' ),
+    TauInputTag = cms.InputTag( 'gtStage2DigisScouting','Tau' ),
+    JetInputTag = cms.InputTag( 'gtStage2DigisScouting','Jet' ),
+    EtSumInputTag = cms.InputTag( 'gtStage2DigisScouting','EtSum' ),
+    EtSumZdcInputTag = cms.InputTag( 'gtStage2DigisScouting','EtSumZDC' ),
+    CICADAInputTag = cms.InputTag( 'gtStage2DigisScouting','CICADAScore' ),
+    ExtInputTag = cms.InputTag( "gtStage2DigisScouting" ),
+    AlgoBlkInputTag = cms.InputTag( "gtStage2DigisScouting" ),
+    GetPrescaleColumnFromData = cms.bool( False ),
+    AlgorithmTriggersUnprescaled = cms.bool( True ),
+    RequireMenuToMatchAlgoBlkInput = cms.bool( True ),
+    AlgorithmTriggersUnmasked = cms.bool( True ),
+    useMuonShowers = cms.bool( True ),
+    resetPSCountersEachLumiSec = cms.bool( True ),
+    semiRandomInitialPSCounters = cms.bool( False ),
+    ProduceL1GtDaqRecord = cms.bool( True ),
+    ProduceL1GtObjectMapRecord = cms.bool( True ),
+    EmulateBxInEvent = cms.int32( 1 ),
+    L1DataBxInEvent = cms.int32( 5 ),
+    AlternativeNrBxBoardDaq = cms.uint32( 0 ),
+    BstLengthBytes = cms.int32( -1 ),
+    PrescaleSet = cms.uint32( 1 ),
+    Verbosity = cms.untracked.int32( 0 ),
+    PrintL1Menu = cms.untracked.bool( False ),
+    TriggerMenuLuminosity = cms.string( "startup" ),
+    produceAXOL1TLScore = cms.bool(True)
+)
+
+AXOL1TLScoreTable = cms.EDProducer("SimpleTriggerAXOL1TLScoreFlatTableProducer",
+    src = cms.InputTag("gtStage2ObjectMapScouting", "AXOScore"),
+    minBX = cms.int32(-2),
+    maxBX = cms.int32(2),
+    cut = cms.string(""),
+    name= cms.string("AXOL1TLScore"),
+    doc = cms.string(""),
+    extension = cms.bool(False),
+    variables = cms.PSet(
+        bxInEvent = Var("getbxInEventNr()", "int", doc="bunch cross in the GT event record (E,F,0,1,2)"),
+        AXOScore = Var("getAXOScore()", "float", doc="axo score", precision=-1)
+    )
+)

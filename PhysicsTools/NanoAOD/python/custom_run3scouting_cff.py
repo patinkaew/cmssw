@@ -3,7 +3,6 @@ from PhysicsTools.NanoAOD.run3scouting_cff import *
 from PhysicsTools.NanoAOD.globals_cff import puTable
 from PhysicsTools.NanoAOD.triggerObjects_cff import unpackedPatTrigger, triggerObjectTable, l1bits
 from L1Trigger.Configuration.L1TRawToDigi_cff import *
-from EventFilter.L1TRawToDigi.gtStage2Digis_cfi import gtStage2Digis
 from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import patTrigger
 from PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi import selectedPatTrigger
 from PhysicsTools.PatAlgos.slimming.slimmedPatTrigger_cfi import slimmedPatTrigger
@@ -23,7 +22,6 @@ run3_scouting_nanoAOD_post2023.toReplaceWith(muonScoutingTableTask, cms.Task(muo
     .toReplaceWith(displacedvertexScoutingTableTask, cms.Task(displacedvertexVtxScoutingTable, displacedvertexNoVtxScoutingTable))
 
 ## L1 decisions
-gtStage2DigisScouting = gtStage2Digis.clone(InputLabel="hltFEDSelectorL1")
 l1bitsScouting = l1bits.clone(src="gtStage2DigisScouting")
 patTriggerScouting = patTrigger.clone(l1tAlgBlkInputTag="gtStage2DigisScouting",l1tExtBlkInputTag="gtStage2DigisScouting")
 
@@ -49,7 +47,8 @@ triggerObjectTableScouting = triggerObjectTable.clone(src="unpackedPatTriggerSco
 
 triggerTask = cms.Task(
     gtStage2DigisScouting, l1MuScoutingTable, l1EGScoutingTable, l1TauScoutingTable, l1JetScoutingTable, l1EtSumScoutingTable, 
-    unpackedPatTriggerScouting,triggerObjectTableScouting,l1bitsScouting
+    unpackedPatTriggerScouting,triggerObjectTableScouting,l1bitsScouting,
+    GlobalParametersRcdSourceScouting,GlobalParametersScouting,gtStage2ObjectMapScouting,AXOL1TLScoreTable
 )
 triggerSequence = cms.Sequence(L1TRawToDigi+patTriggerScouting+selectedPatTriggerScouting+slimmedPatTriggerScouting+cms.Sequence(triggerTask))
 
