@@ -1,0 +1,8 @@
+<lcgdict>
+  <class name="reco::ScoutingPFJet" ClassVersion="3">
+    <version ClassVersion="3" checksum="3502311834"/>
+  </class>
+
+  <class name="std::vector<reco::ScoutingPFJet>"/>
+  <class name="edm::Wrapper<std::vector<reco::ScoutingPFJet> >" persistent="false"/>
+</lcgdict>
