@@ -131,7 +131,7 @@ scoutingMuonNoVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
 # format during 2022 data-taking 
 # for accessing d0, dz, and charge, use changes from  https://github.com/cms-sw/cmssw/pull/41025
 # https://github.com/cms-sw/cmssw/blob/CMSSW_12_4_X/DataFormats/Scouting/interface/Run3ScoutingElectron.h
-scoutingElectronTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProducer",
+scoutingElectronTable = cms.EDProducer("SimpleRun3ScoutingElectronCollectionFlatTableProducer",
     src = cms.InputTag("hltScoutingEgammaPacker"),
     cut = cms.string(""),
     name = cms.string("ScoutingElectron"),
@@ -163,21 +163,45 @@ scoutingElectronTable = cms.EDProducer("SimpleRun3ScoutingElectronFlatTableProdu
     ),
 )
 
+# select best track
+scoutingElectronBestTrack = cms.EDProducer("ScoutingElectronBestTrackProducer",
+    Run3ScoutingElectron = cms.InputTag('hltScoutingEgammaPacker'),
+    TrackPtMin = cms.vdouble(12.0, 12.0),
+    TrackChi2OverNdofMax = cms.vdouble(3.0, 2.0),
+    RelativeEnergyDifferenceMax = cms.vdouble(1.0, 1.0),
+    DeltaPhiMax = cms.vdouble(0.06, 0.06),
+    produceBestTrackVariables = cms.bool(True),
+    produceBestTrackIndex = cms.bool(False),
+)
+
 # scouting electron format changed for 2023 data-taking in https://github.com/cms-sw/cmssw/pull/41025
 # https://github.com/cms-sw/cmssw/blob/CMSSW_13_0_X/DataFormats/Scouting/interface/Run3ScoutingElectron.h
 def modifyScoutingElectronTable2023(scoutingElectronTable):
     del scoutingElectronTable.variables.d0       # replaced with trkd0 (std::vector)
     del scoutingElectronTable.variables.dz       # replaced with trkdz (std::vector)
-    del scoutingElectronTable.variables.charge   # replacec with trkcharge (std::vector)
+    del scoutingElectronTable.variables.charge   # replaced with trkcharge (std::vector)
+
+    scoutingElectronTable.externalVariables = cms.PSet(
+        bestTrack_d0 = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-d0"), float, doc="best track d0"),
+        bestTrack_dz = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-dz"), float, doc="best track dz"),
+        bestTrack_pt = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-pt"), float, doc="best track pt"),
+        bestTrack_eta = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-eta"), float, doc="best track eta"),
+        bestTrack_phi = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-phi"), float, doc="best track phi"),
+        bestTrack_pMode = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-pMode"), float, doc="best track pMode"),
+        bestTrack_etaMode = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-etaMode"), float, doc="best track etaMode"),
+        bestTrack_phiMode = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-phiMode"), float, doc="best track phiMode"),
+        bestTrack_qoverpModeError = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-qoverpModeError"), float, doc="best track qoverpModeError"),
+        bestTrack_chi2overndf = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-chi2overndf"), float, doc="best track chi2overndf"),
+        bestTrack_charge = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-charge"), int, doc="best track charge"),
+    )
 
     return scoutingElectronTable
 
 # scouting electron format changed for 2024 data-taking in https://github.com/cms-sw/cmssw/pull/43744
 # https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingElectron.h
 def modifyScoutingElectronTable2024(scoutingElectronTable):
-    del scoutingElectronTable.variables.d0       # replaced with trkd0 (std::vector)
-    del scoutingElectronTable.variables.dz       # replaced with trkdz (std::vector)
-    del scoutingElectronTable.variables.charge   # replacec with trkcharge (std::vector)
+    # first remove track variables and add best track variables similar to 2023
+    modifyScoutingElectronTable2023(scoutingElectronTable);
 
     scoutingElectronTable.variables.rawEnergy = Var('rawEnergy', 'float', precision=10, doc='raw energy')
     scoutingElectronTable.variables.preshowerEnergy = Var('preshowerEnergy', 'float', precision=10, doc='preshower energy')
