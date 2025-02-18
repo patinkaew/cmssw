@@ -11,6 +11,7 @@ typedef SimpleFlatTableProducer<Run3ScoutingMuon> SimpleRun3ScoutingMuonFlatTabl
 
 #include "DataFormats/Scouting/interface/Run3ScoutingElectron.h"
 typedef SimpleFlatTableProducer<Run3ScoutingElectron> SimpleRun3ScoutingElectronFlatTableProducer;
+typedef SimpleCollectionFlatTableProducer<Run3ScoutingElectron> SimpleRun3ScoutingElectronCollectionFlatTableProducer;
 
 #include "DataFormats/Scouting/interface/Run3ScoutingTrack.h"
 typedef SimpleFlatTableProducer<Run3ScoutingTrack> SimpleRun3ScoutingTrackFlatTableProducer;
@@ -23,5 +24,6 @@ DEFINE_FWK_MODULE(SimpleRun3ScoutingVertexFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingPhotonFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingMuonFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingElectronFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleRun3ScoutingElectronCollectionFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingTrackFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRun3ScoutingPFJetFlatTableProducer);
