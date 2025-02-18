@@ -31,6 +31,8 @@ scoutingMuonDisplacedVertexTableTask = cms.Task(scoutingMuonDisplacedVertexTable
         .toReplaceWith(scoutingMuonDisplacedVertexTableTask, cms.Task(scoutingMuonVtxDisplacedVertexTable, scoutingMuonNoVtxDisplacedVertexTable))
 
 # Scouting Electron
+scoutingElectronTableTask = cms.Task(scoutingElectronBestTrack, scoutingElectronTable)
+
 # scouting electron format is changed for 2023 data-taking in https://github.com/cms-sw/cmssw/pull/41025
 run3_scouting_nanoAOD_2023.toModify(scoutingElectronTable, modifyScoutingElectronTable2023)
 
@@ -110,7 +112,7 @@ def prepareScoutingNanoTaskCommon():
     # all scouting objects are saved except PF Candidate and Track
     scoutingNanoTaskCommon = cms.Task()
     scoutingNanoTaskCommon.add(scoutingMuonTableTask, scoutingMuonDisplacedVertexTableTask)
-    scoutingNanoTaskCommon.add(scoutingElectronTable)
+    scoutingNanoTaskCommon.add(scoutingElectronTableTask)
     scoutingNanoTaskCommon.add(scoutingPhotonTable)
     scoutingNanoTaskCommon.add(scoutingPrimaryVertexTable)
     scoutingNanoTaskCommon.add(scoutingPFJetTable)
@@ -276,4 +278,33 @@ def addScoutingParticle(process):
 def addScoutingPFCandidate(process):
     # PF candidate after translation to reco::PFCandidate
     process.scoutingNanoSequence.associate(scoutingPFCandidateTask)
+    return process
+
+def addAllScoutingElectronTracks(process):
+    process.scoutingElectronBestTrack.produceBestTrackIndex = cms.bool(True)
+
+    process.scoutingElectronTable.externalVariables.bestTrack_index\
+            = ExtVar(cms.InputTag("scoutingElectronBestTrack", "bestTrack-index"), int, doc="best track index")
+
+    process.scoutingElectronTable.collectionVariables = cms.PSet(
+        ScoutingElectronTrack = cms.PSet(
+            name = cms.string("ScoutingElectronTrack"),
+            doc = cms.string("Scouting Electron Tracks"),
+            useCount = cms.bool(True),
+            useOffset = cms.bool(True),
+            variables = cms.PSet(
+                d0 = Var("trkd0", "float", doc="track d0"),
+                dz = Var("trkdz", "float", doc="track dz"),
+                pt = Var("trkpt", "float", doc="track pt"),
+                eta = Var("trketa", "float", doc="track eta"),
+                phi = Var("trkphi", "float", doc="track phi"),
+                pMode = Var("trkpMode", "float", doc="track pMode"),
+                etaMode = Var("trketaMode", "float", doc="track etaMode"),
+                phiMode = Var("trkphiMode", "float", doc="track phiMode"),
+                qoverpModeError = Var("trkqoverpModeError", "float", doc="track qoverpModeError"),
+                chi2overndf = Var("trkchi2overndf", "float", doc="track normalized chi squared"),
+                charge = Var("trkcharge", "int", doc="track charge"),
+            ),
+        ),
+    )
     return process
