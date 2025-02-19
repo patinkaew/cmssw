@@ -280,7 +280,8 @@ def addScoutingPFCandidate(process):
     process.scoutingNanoSequence.associate(scoutingPFCandidateTask)
     return process
 
-def addAllScoutingElectronTracks(process):
+# this adds all electron tracks in addition to best track selected
+def addScoutingElectronTrack(process):
     process.scoutingElectronBestTrack.produceBestTrackIndex = cms.bool(True)
 
     process.scoutingElectronTable.externalVariables.bestTrack_index\
