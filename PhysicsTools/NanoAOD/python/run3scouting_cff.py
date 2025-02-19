@@ -10,7 +10,7 @@ from PhysicsTools.NanoAOD.simpleCandidateFlatTableProducer_cfi import simpleCand
 # Scouting Muon
 # https://github.com/cms-sw/cmssw/blob/CMSSW_14_0_X/DataFormats/Scouting/interface/Run3ScoutingMuon.h
 
-scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
+scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonCollectionFlatTableProducer",
     src = cms.InputTag("hltScoutingMuonPacker"),
     cut = cms.string(""),
     name = cms.string("ScoutingMuon"),
@@ -72,7 +72,25 @@ scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonFlatTableProducer",
         trk_vx = Var('trk_vx', 'float', precision=10, doc='track vx'),
         trk_vy = Var('trk_vy', 'float', precision=10, doc='track vy'),
         trk_vz = Var('trk_vz', 'float', precision=10, doc='track vz'),
+        trk_hitPattern_hitCount = Var("trk_hitPattern().hitCount", "uint8", doc="track hitPattern hitCount"),
+        trk_hitPattern_beginTrackHits = Var("trk_hitPattern().beginTrackHits", "uint8", doc="track hitPattern beginTrackHits"),
+        trk_hitPattern_endTrackHits = Var("trk_hitPattern().endTrackHits", "uint8", doc="track hitPattern endTrackHits"),
+        trk_hitPattern_beginInner = Var("trk_hitPattern().beginInner", "uint8", doc="track hitPattern beginInner"),
+        trk_hitPattern_endInner = Var("trk_hitPattern().endInner", "uint8", doc="track hitPattern endInner"),
+        trk_hitPattern_beginOuter = Var("trk_hitPattern().beginOuter", "uint8", doc="track hitPattern beginOuter"),
+        trk_hitPattern_endOuter = Var("trk_hitPattern().endOuter", "uint8", doc="track hitPattern endOuter"),
     ),
+    collectionVariables = cms.PSet(
+        ScoutingMuonVtxIndx = cms.PSet(
+            name = cms.string("ScoutingMuonVtxIndx"),
+            doc = cms.string("ScoutingMuon VtxIndx"),
+            useCount = cms.bool(True),
+            useOffset = cms.bool(True),
+            variables = cms.PSet(
+                vtxIndx = Var('vtxIndx', 'int', doc='vertex indices'),
+            ),
+        ),
+    )
 )
 
 # Scouting Displaced Vertex (Muon)
@@ -109,6 +127,8 @@ scoutingMuonVtxTable = scoutingMuonTable.clone(
     name = cms.string("ScoutingMuonVtx"),
     doc  = cms.string("Scouting Muon Vtx"),
 )
+scoutingMuonVtxTable.collectionVariables.ScoutingMuonVtxIndx.name = cms.string("ScoutingMuonVtxVtxIndx")
+scoutingMuonVtxTable.collectionVariables.ScoutingMuonVtxIndx.doc = cms.string("ScoutingMuonVtx VtxIndx")
 scoutingMuonVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
     src = cms.InputTag("hltScoutingMuonPackerVtx", "displacedVtx"),
     name = cms.string("ScoutingMuonVtxDisplacedVertex"),
@@ -121,6 +141,8 @@ scoutingMuonNoVtxTable = scoutingMuonTable.clone(
     name = cms.string("ScoutingMuonNoVtx"),
     doc  = cms.string("Scouting Muon NoVtx"),
 )
+scoutingMuonNoVtxTable.collectionVariables.ScoutingMuonVtxIndx.name = cms.string("ScoutingMuonNoVtxVtxIndx")
+scoutingMuonNoVtxTable.collectionVariables.ScoutingMuonVtxIndx.doc = cms.string("ScoutingMuonNoVtx VtxIndx")
 scoutingMuonNoVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
     src = cms.InputTag("hltScoutingMuonPackerNoVtx", "displacedVtx"),
     name = cms.string("ScoutingMuonNoVtxDisplacedVertex"),
