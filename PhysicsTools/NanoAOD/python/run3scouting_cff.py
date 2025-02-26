@@ -90,6 +90,15 @@ scoutingMuonTable = cms.EDProducer("SimpleRun3ScoutingMuonCollectionFlatTablePro
                 vtxIndx = Var('vtxIndx', 'int', doc='vertex indices'),
             ),
         ),
+        ScoutingMuonHitPattern = cms.PSet(
+            name = cms.string("ScoutingMuonHitPattern"),
+            doc = cms.string("ScoutingMuon HitPattern"),
+            useCount = cms.bool(True),
+            useOffset = cms.bool(True),
+            variables = cms.PSet(
+                hitPattern = Var('trk_hitPattern().hitPattern', 'uint16', doc='track hitPattern hitPattern'),
+            ),
+        )
     )
 )
 
@@ -129,6 +138,8 @@ scoutingMuonVtxTable = scoutingMuonTable.clone(
 )
 scoutingMuonVtxTable.collectionVariables.ScoutingMuonVtxIndx.name = cms.string("ScoutingMuonVtxVtxIndx")
 scoutingMuonVtxTable.collectionVariables.ScoutingMuonVtxIndx.doc = cms.string("ScoutingMuonVtx VtxIndx")
+scoutingMuonVtxTable.collectionVariables.ScoutingMuonHitPattern.name = cms.string("ScoutingMuonVtxHitPattern")
+scoutingMuonVtxTable.collectionVariables.ScoutingMuonHitPattern.doc = cms.string("ScoutingMuonVtx HitPattern")
 scoutingMuonVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
     src = cms.InputTag("hltScoutingMuonPackerVtx", "displacedVtx"),
     name = cms.string("ScoutingMuonVtxDisplacedVertex"),
@@ -143,6 +154,8 @@ scoutingMuonNoVtxTable = scoutingMuonTable.clone(
 )
 scoutingMuonNoVtxTable.collectionVariables.ScoutingMuonVtxIndx.name = cms.string("ScoutingMuonNoVtxVtxIndx")
 scoutingMuonNoVtxTable.collectionVariables.ScoutingMuonVtxIndx.doc = cms.string("ScoutingMuonNoVtx VtxIndx")
+scoutingMuonNoVtxTable.collectionVariables.ScoutingMuonHitPattern.name = cms.string("ScoutingMuonNoVtxHitPattern")
+scoutingMuonNoVtxTable.collectionVariables.ScoutingMuonHitPattern.doc = cms.string("ScoutingMuonNoVtx HitPattern")
 scoutingMuonNoVtxDisplacedVertexTable = scoutingMuonDisplacedVertexTable.clone(
     src = cms.InputTag("hltScoutingMuonPackerNoVtx", "displacedVtx"),
     name = cms.string("ScoutingMuonNoVtxDisplacedVertex"),
