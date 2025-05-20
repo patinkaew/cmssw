@@ -44,5 +44,17 @@
         <version ClassVersion="3" checksum="2793726511"/>
     </class>
     <class name="edm::Wrapper<nanoaod::UniqueString>" />
+
+    <class name="nanoaod::cut::Value<uint8_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<int16_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<uint16_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<int32_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<uint32_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<int64_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<uint64_t>" persistent="false"/>
+    <class name="nanoaod::cut::Value<float>" persistent="false"/>
+    <class name="nanoaod::cut::Value<double>" persistent="false"/>
+    <class name="nanoaod::cut::Value<bool>" persistent="false"/>
+    <class name="nanoaod::cut::CutResults" persistent="false"/>
 </lcgdict>
 
