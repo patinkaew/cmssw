@@ -3,6 +3,9 @@ from PhysicsTools.NanoAOD.run3scouting_cff import *
 from EventFilter.L1TRawToDigi.gtStage2Digis_cfi import gtStage2Digis
 from PhysicsTools.NanoAOD.triggerObjects_cff import l1bits
 from PhysicsTools.NanoAOD.globals_cff import puTable
+from Configuration.Eras.Modifier_run3_scouting_nanoAOD_2023_cff import run3_scouting_nanoAOD_2023
+from Configuration.Eras.Modifier_run3_scouting_nanoAOD_2024_cff import run3_scouting_nanoAOD_2024
+from Configuration.Eras.Modifier_run3_scouting_nanoAOD_2025_cff import run3_scouting_nanoAOD_2025
 
 ############################
 ### Sub Task Definitions ###
@@ -134,6 +137,11 @@ scoutingTriggerTask = prepareScoutingTriggerTask()
 scoutingTriggerSequence = cms.Sequence(scoutingTriggerTask)
 scoutingNanoTaskMC = prepareScoutingNanoTaskMC()
 
+# switches for ScoutingNano
+scoutingNanoSwitches = cms.PSet(
+    checkEventsWithoutScouting = cms.untracked.bool(False)
+)
+
 def customiseScoutingNano(process):
     # if running with standard NanoAOD, triggerSequence is already added
     # if running standalone, triggerSequence need to be added
@@ -160,7 +168,7 @@ def customiseScoutingNano(process):
 # this is suitable when ScoutingPFMonitor/RAW is involved, e.g. RAW, RAW-MiniAOD two-file solution, full chain RAW-MiniAOD-NanoAOD
 # when running full chain RAW-MiniAOD-NanoAOD, this ensures that gtStage2Digis, gmtStage2Digis, and caloStage2Digis are run
 def customiseScoutingNanoForScoutingPFMonitor(process):
-    process = skipEventsWithoutScouting(process)
+    process = skipEventsWithoutScoutingByEra(process)
 
     # replace gtStage2DigisScouting with standard gtStage2Digis
     process.scoutingTriggerTask.remove(process.gtStage2DigisScouting)
@@ -194,7 +202,7 @@ def customiseScoutingNanoFromMini(process):
     # when running on data, assume ScoutingPFMonitor/MiniAOD dataset as inputs
     runOnData = hasattr(process,"NANOAODSIMoutput") or hasattr(process,"NANOAODoutput")
     if runOnData:
-        process = skipEventsWithoutScouting(process)
+        process = skipEventsWithoutScoutingByEra(process)
 
     # remove gtStage2Digis since they are already run for Mini
     process.scoutingTriggerTask.remove(process.gtStage2DigisScouting)
@@ -235,6 +243,20 @@ def skipEventsWithoutScouting(process):
 
     if hasattr(process, "write_NANOAOD"): # PromptReco
         process.write_NANOAOD.SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring("nanoSkim_step")) 
+
+    return process
+
+# set switch to turn on check for events without scouting object products and skip them for 2022-24
+# and turn off this check for 2025 using era modifiers
+# if the switch is True, will check and skip events without scouting object products
+# this is suitable for ScoutingPFMonitor
+# this is not necessary for ScoutingPFRun3 since all events have scouting object products
+def skipEventsWithoutScoutingByEra(process):
+    process.scoutingNanoSwitches.checkEventsWithoutScouting = cms.untracked.bool(True)
+    run3_scouting_nanoAOD_2025.toModify(process, scoutingNanoSwitches = dict(checkEventsWithoutScouting = cms.untracked.bool(False)))
+
+    if process.scoutingNanoSwitches.checkEventsWithoutScouting:
+        process = skipEventsWithoutScouting(process)
 
     return process
 
