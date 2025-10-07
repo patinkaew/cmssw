@@ -73,4 +73,7 @@ autoNANO = {
     # NANOGEN (from MiniAOD)
     'GENFromMini': {'sequence': 'PhysicsTools/NanoAOD/nanogen_cff.nanogenSequence',
                     'customize': 'PhysicsTools/NanoAOD/nanogen_cff.customizeNanoGENFromMini'},
+    # HLT
+    'HLT' : {'sequence' : 'PhysicsTools/NanoAOD/custom_hlt_cff',
+             'customize' : 'PhysicsTools/NanoAOD/custom_hlt_cff.nanoAOD_customizeCommon'},
 }

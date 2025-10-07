@@ -85,6 +85,8 @@ namespace pat {
 
     bool addBTagInfo_;
     bool addDiscriminators_;
+    bool matchJetTagByDeltaR_;
+    double maxJetTagDeltaR2_;
     std::vector<edm::InputTag> discriminatorTags_;
     std::vector<edm::EDGetTokenT<reco::JetFloatAssociation::Container>> discriminatorTokens_;
     std::vector<std::string> discriminatorLabels_;
@@ -110,6 +112,12 @@ namespace pat {
 
     bool useUserData_;
     pat::PATUserDataHelper<pat::Jet> userDataHelper_;
+
+
+    bool findTagValueByMinDeltaR2(float& jetTagValue,
+                                  reco::Jet const& jet,
+                                  reco::JetTagCollection const& jetTags,
+                                  float maxDeltaR2) const;
     //
     bool printWarning_;  // this is introduced to issue warnings only once per job
   };
@@ -156,6 +164,9 @@ PATJetProducer::PATJetProducer(const edm::ParameterSet &iConfig)
   }
   addBTagInfo_ = iConfig.getParameter<bool>("addBTagInfo");
   addDiscriminators_ = iConfig.getParameter<bool>("addDiscriminators");
+  matchJetTagByDeltaR_ = iConfig.getParameter<bool>("matchJetTagByDeltaR");
+  double maxJetTagDeltaR = iConfig.getParameter<double>("maxJetTagDeltaR");
+  maxJetTagDeltaR2_ = maxJetTagDeltaR * maxJetTagDeltaR;
   discriminatorTags_ = iConfig.getParameter<std::vector<edm::InputTag>>("discriminatorSources");
   discriminatorTokens_ = edm::vector_transform(discriminatorTags_, [this](edm::InputTag const &tag) {
     return mayConsume<reco::JetFloatAssociation::Container>(tag);
@@ -234,6 +245,24 @@ PATJetProducer::PATJetProducer(const edm::ParameterSet &iConfig)
 }
 
 PATJetProducer::~PATJetProducer() {}
+
+// from HLTrigger/btau/plugins/HLTJetTag.h
+bool PATJetProducer::findTagValueByMinDeltaR2(float& jetTagValue,
+                                              reco::Jet const& jet,
+                                              reco::JetTagCollection const& jetTags,
+                                              float maxDeltaR2) const {
+  bool ret = false;
+  for (auto const& jetTag : jetTags) {
+    auto const tmpDR2 = reco::deltaR2(jet, *(jetTag.first));
+    if (tmpDR2 < maxDeltaR2) {
+      maxDeltaR2 = tmpDR2;
+      jetTagValue = jetTag.second;
+      ret = true;
+    }
+  }
+
+  return ret;
+}
 
 void PATJetProducer::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   // check whether dealing with MC or real data
@@ -467,7 +496,18 @@ void PATJetProducer::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) 
     if (addBTagInfo_) {
       if (addDiscriminators_) {
         for (size_t k = 0; k < jetDiscriminators.size(); ++k) {
-          float value = (*jetDiscriminators[k])[jetRef];
+          float value = -1;
+          if (jetDiscriminators[k].isValid()) {
+            if (matchJetTagByDeltaR_) {
+              findTagValueByMinDeltaR2(value, ajet, *jetDiscriminators[k], maxJetTagDeltaR2_);
+            } else {
+              value = (*jetDiscriminators[k])[jetRef];
+            }
+          } else {
+             edm::LogWarning("discriminator not found")
+               << "Discriminator with label: " << discriminatorLabels_[k] << " is not found. "
+               << "Tag value will be set to -1.";
+          }
           ajet.addBDiscriminatorPair(std::make_pair(discriminatorLabels_[k], value));
         }
       }
@@ -588,6 +628,8 @@ void PATJetProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptio
   // btag discriminator tags
   iDesc.add<bool>("addBTagInfo", true);
   iDesc.add<bool>("addDiscriminators", true);
+  iDesc.add<bool>("matchJetTagByDeltaR", false);
+  iDesc.add<double>("maxJetTagDeltaR", 0.1);
   iDesc.add<std::vector<edm::InputTag>>("discriminatorSources", emptyVInputTags);
 
   // jet flavour idetification configurables
