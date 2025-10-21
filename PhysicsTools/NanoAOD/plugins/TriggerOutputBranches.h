@@ -43,6 +43,8 @@ private:
   long m_lastRun;
   unsigned long m_fills;
   std::string m_processName;
+  std::vector<std::string> triggerPrefixesToTagProcess = {"L1", "HLT", "DST", "Dataset"};
+  bool tagProcessForTriggerPrefixes(std::string&) const;
   bool verifyBranchUniqueName(TTree &, std::string) const;
 
   template <typename T>
