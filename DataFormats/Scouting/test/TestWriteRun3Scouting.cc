@@ -696,6 +696,7 @@ namespace edmtest {
       int iOffset = static_cast<int>(iEvent.id().event() + i);
 
       run3ScoutingHBHERecHits->emplace_back(static_cast<float>(hbheRecHitsFloatingPointValues_[0] + offset),
+                                            static_cast<float>(hbheRecHitsFloatingPointValues_[1] + offset),
                                             static_cast<unsigned int>(hbheRecHitsIntegralValues_[0] + iOffset));
     }
     iEvent.put(hbheRecHitsPutToken_, std::move(run3ScoutingHBHERecHits));
