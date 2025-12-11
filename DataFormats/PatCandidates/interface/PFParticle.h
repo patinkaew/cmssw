@@ -33,6 +33,8 @@ namespace pat {
   public:
     /// default constructor
     PFParticle() {}
+    /// constructor from reco PFCandidate
+    PFParticle(const reco::PFCandidate& aPFParticle);
     /// constructor from ref
     PFParticle(const edm::RefToBase<reco::PFCandidate>& aPFParticle);
     /// destructor
