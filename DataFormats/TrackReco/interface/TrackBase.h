@@ -402,6 +402,9 @@ namespace reco {
      */
     bool appendMuonHitPattern(const DetId &id, TrackingRecHit::Type hitType);
 
+    /// Sets HitPattern
+    void setHitPattern(const HitPattern &hitPattern);
+
     /// Sets HitPattern as empty
     void resetHitPattern();
 
@@ -525,6 +528,8 @@ namespace reco {
   inline bool TrackBase::appendMuonHitPattern(const DetId &id, TrackingRecHit::Type hitType) {
     return hitPattern_.appendMuonHit(id, hitType);
   }
+  
+  inline void TrackBase::setHitPattern(const HitPattern &hitPattern) { hitPattern_ = hitPattern; }
 
   inline void TrackBase::resetHitPattern() { hitPattern_.clear(); }
 
