@@ -61,4 +61,23 @@
   <class name="reco::JetMatchedPartonsRefProd"/>
   <class name="reco::JetMatchedPartonsRefVector"/>
   <class name="edm::Wrapper<reco::JetMatchedPartonsCollection>"/>
+
+  <class name="reco::JetFlavourAlgoInfo" ClassVersion="3">
+   <version ClassVersion="3" checksum="3470144659"/>
+  </class>
+  <class name="std::vector<reco::JetFlavourAlgoInfo>"/>
+  <class name="std::pair<edm::RefToBase<reco::Jet>, reco::JetFlavourAlgoInfo>"/>
+  <class name="std::vector<std::pair<edm::RefToBase<reco::Jet>, reco::JetFlavourAlgoInfo> >"/>
+  <class name="reco::JetFlavourAlgoInfoMatchingCollectionBase">
+    <field name="transientVector_" transient="true"/>
+  </class>
+  <class name="reco::JetFlavourAlgoInfoMatchingCollection" ClassVersion="3">
+   <version ClassVersion="3" checksum="1635594933"/>
+    <!-- <field name="transientVector_" transient="true"/> -->
+    <!-- <field name="fixed_" transient="true"/> -->
+  </class>
+  <class name="reco::JetFlavourAlgoInfoMatchingRef"/>
+  <class name="reco::JetFlavourAlgoInfoMatchingRefProd"/>
+  <class name="reco::JetFlavourAlgoInfoMatchingRefVector"/>
+  <class name="edm::Wrapper<reco::JetFlavourAlgoInfoMatchingCollection>"/>
 </lcgdict>

@@ -8,3 +8,5 @@
 #include "DataFormats/JetMatching/interface/JetFlavourMatching.h"
 #include "DataFormats/JetMatching/interface/MatchedPartons.h"
 #include "DataFormats/JetMatching/interface/JetMatchedPartons.h"
+#include "DataFormats/JetMatching/interface/JetFlavourAlgoInfo.h"
+#include "DataFormats/JetMatching/interface/JetFlavourAlgoInfoMatching.h"

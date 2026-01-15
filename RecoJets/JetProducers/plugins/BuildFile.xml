@@ -9,6 +9,7 @@
   <use name="FWCore/ParameterSet"/>
   <use name="DataFormats/BTauReco"/>
   <use name="DataFormats/JetReco"/>
+  <use name="DataFormats/JetMatching"/>
   <use name="DataFormats/VertexReco"/>
   <use name="DataFormats/HcalRecHit"/>
   <use name="DataFormats/EcalRecHit"/>
