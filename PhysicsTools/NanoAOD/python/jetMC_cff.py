@@ -140,3 +140,103 @@ trackGenJetAK4Table.variables.phi.precision = 8
 jetMCTaskak4 = cms.Task(jetMCTable,genJetTable,patJetPartonsNano,genJetFlavourTable,genParticlesForJetsCharged,ak4GenJetsChargedOnly,trackGenJetAK4Table)
 jetMCTaskak8 = cms.Task(genJetAK8Table,genJetAK8FlavourAssociation,genJetAK8FlavourTable,fatJetMCTable,genSubJetAK8Table,subjetMCTable)
 jetMCTask = jetMCTaskak4.copyAndAdd(jetMCTaskak8)
+
+# Flavoured jet algorithms
+#prunedGenParticlesNoNu = cms.EDFilter("CandPtrSelector",
+#    src = cms.InputTag("prunedGenParticles"), 
+#    cut = cms.string("abs(pdgId) != 12 && abs(pdgId) != 14 && abs(pdgId) != 16")
+#)
+
+from RecoJets.Configuration.GenJetParticles_cff import genParticlesForJetsNoNu
+#prunedGenParticlesNoNu = genParticlesForJetsNoNu.clone(src = cms.InputTag("prunedGenParticles"))
+prunedGenParticlesNoNu = genParticlesForJetsNoNu.clone()
+
+from RecoJets.JetProducers.GenJetParameters_cfi import *
+from RecoJets.JetProducers.AnomalousCellParameters_cfi import *
+
+SDFJet = cms.EDProducer("SDFJetProducer",
+    GenJetParameters,
+    AnomalousCellParameters,
+    jetAlgorithm = cms.string("AntiKt"),
+    rParam       = cms.double(0.4),
+    recombination = cms.string("mod2"),
+    beta = cms.double(2.0),
+    zcut = cms.double(0.1),
+    R0 = cms.double(0.4),
+)
+SDFJet.src = "prunedGenParticlesNoNu"
+
+CMPJet = cms.EDProducer("CMPJetProducer",
+    GenJetParameters,
+    AnomalousCellParameters,
+    jetAlgorithm = cms.string("AntiKt"),
+    rParam       = cms.double(0.4),
+    recombination = cms.string("mod2"),
+    a = cms.double(0.1),
+    correctionType = cms.string("SqrtCoshyCosPhiArgument_a2"),
+    clusteringType = cms.string("DynamicKtMax"),
+)
+CMPJet.src = "prunedGenParticlesNoNu"
+
+IFNJet = cms.EDProducer("IFNJetProducer",
+    GenJetParameters,
+    AnomalousCellParameters,
+    jetAlgorithm = cms.string("AntiKt"),
+    rParam       = cms.double(0.4),
+    recombination = cms.string("mod2"),
+    alpha = cms.double(2.0),
+    omega = cms.double(1.0),
+)
+IFNJet.src = "prunedGenParticlesNoNu"
+
+GHSJet = cms.EDProducer("GHSJetProducer",
+    GenJetParameters,
+    AnomalousCellParameters,
+    jetAlgorithm = cms.string("AntiKt"),
+    rParam       = cms.double(0.4),
+    recombination = cms.string("mod2"),
+    ptcut = cms.double(10.0),
+    alpha = cms.double(1.0),
+    omega = cms.double(2.0),
+)
+GHSJet.src = "prunedGenParticlesNoNu"
+
+from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
+
+genJetRecluster = ak4GenJets.clone(src=cms.InputTag("prunedGenParticlesNoNu"))
+
+genJetReclusterTable = simpleGenJetFlatTableProducer.clone(
+    src = cms.InputTag("genJetRecluster"),
+    cut = cms.string("pt > 0"),
+    name = cms.string("GenJetRecluster"),
+    doc  = cms.string(""),
+    variables = cms.PSet(P4Vars,
+    #anything else?
+    )
+)
+
+genJetFlavourAlgoTable = cms.EDProducer("GenJetFlavourAlgoTableProducer",
+    #name = genJetReclusterTable.name,
+    #src = genJetReclusterTable.src,
+    #cut = genJetReclusterTable.cut,
+    name = genJetTable.name,
+    src = genJetTable.src,
+    cut = genJetTable.cut,
+    deltaR = cms.double(0.1),
+    algos = cms.PSet(
+        SDF = cms.InputTag("SDFJet"),
+        CMP = cms.InputTag("CMPJet"),
+        IFN = cms.InputTag("IFNJet"),
+        GHS = cms.InputTag("GHSJet"),
+    )
+)
+
+genJetFlavourAlgoTableTask = cms.Task(prunedGenParticlesNoNu,
+                                      #genJetRecluster, genJetReclusterTable,
+                                      SDFJet,
+                                      CMPJet,
+                                      IFNJet,
+                                      GHSJet,
+                                      genJetFlavourAlgoTable)
+
+jetMCTask.add(genJetFlavourAlgoTableTask)
