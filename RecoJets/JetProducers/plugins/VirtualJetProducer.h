@@ -215,6 +215,8 @@ protected:
   bool fromHTTTopJetProducer_ = false;  // for running the v2.0 HEPTopTagger
   bool applyWeight_;              // Apply weights stored in a value map or inside PackedCandidate (e.g. from PUPPI)
   edm::ValueMap<float> weights_;  // weights per particle (e.g. from PUPPI)
+  
+  edm::OrphanHandle<reco::GenJetCollection> genJetHandle_; // orphanHandle to output GenJet for flavoured jet algorithms
 
 private:
   //These are only initialized if we are dealing with CaloJets

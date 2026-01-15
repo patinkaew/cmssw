@@ -783,7 +783,12 @@ void VirtualJetProducer::writeJets(edm::Event& iEvent, edm::EventSetup const& iS
     }
   }
   // put the jets in the collection
-  iEvent.put(std::move(jets), jetCollInstanceName_);
+  if constexpr (std::is_same_v<T, reco::GenJet>) { // store handle for flavoured jet algorithms
+    genJetHandle_ = iEvent.put(std::move(jets), jetCollInstanceName_); 
+  }
+  else {
+    iEvent.put(std::move(jets), jetCollInstanceName_);
+  }
 }
 
 /// function template to write out the outputs
