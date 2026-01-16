@@ -142,14 +142,8 @@ jetMCTaskak8 = cms.Task(genJetAK8Table,genJetAK8FlavourAssociation,genJetAK8Flav
 jetMCTask = jetMCTaskak4.copyAndAdd(jetMCTaskak8)
 
 # Flavoured jet algorithms
-#prunedGenParticlesNoNu = cms.EDFilter("CandPtrSelector",
-#    src = cms.InputTag("prunedGenParticles"), 
-#    cut = cms.string("abs(pdgId) != 12 && abs(pdgId) != 14 && abs(pdgId) != 16")
-#)
-
 from RecoJets.Configuration.GenJetParticles_cff import genParticlesForJetsNoNu
-#prunedGenParticlesNoNu = genParticlesForJetsNoNu.clone(src = cms.InputTag("prunedGenParticles"))
-prunedGenParticlesNoNu = genParticlesForJetsNoNu.clone()
+packedGenParticlesForJetsNoNu = genParticlesForJetsNoNu.clone(src = cms.InputTag("packedGenParticles"))
 
 from RecoJets.JetProducers.GenJetParameters_cfi import *
 from RecoJets.JetProducers.AnomalousCellParameters_cfi import *
@@ -164,7 +158,7 @@ SDFJet = cms.EDProducer("SDFJetProducer",
     zcut = cms.double(0.1),
     R0 = cms.double(0.4),
 )
-SDFJet.src = "prunedGenParticlesNoNu"
+SDFJet.src = "packedGenParticlesForJetsNoNu"
 
 CMPJet = cms.EDProducer("CMPJetProducer",
     GenJetParameters,
@@ -176,7 +170,7 @@ CMPJet = cms.EDProducer("CMPJetProducer",
     correctionType = cms.string("SqrtCoshyCosPhiArgument_a2"),
     clusteringType = cms.string("DynamicKtMax"),
 )
-CMPJet.src = "prunedGenParticlesNoNu"
+CMPJet.src = "packedGenParticlesForJetsNoNu"
 
 IFNJet = cms.EDProducer("IFNJetProducer",
     GenJetParameters,
@@ -187,7 +181,7 @@ IFNJet = cms.EDProducer("IFNJetProducer",
     alpha = cms.double(2.0),
     omega = cms.double(1.0),
 )
-IFNJet.src = "prunedGenParticlesNoNu"
+IFNJet.src = "packedGenParticlesForJetsNoNu"
 
 GHSJet = cms.EDProducer("GHSJetProducer",
     GenJetParameters,
@@ -199,11 +193,11 @@ GHSJet = cms.EDProducer("GHSJetProducer",
     alpha = cms.double(1.0),
     omega = cms.double(2.0),
 )
-GHSJet.src = "prunedGenParticlesNoNu"
+GHSJet.src = "packedGenParticlesForJetsNoNu"
 
 from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
 
-genJetRecluster = ak4GenJets.clone(src=cms.InputTag("prunedGenParticlesNoNu"))
+genJetRecluster = ak4GenJets.clone(src=cms.InputTag("packedGenParticlesForJetsNoNu"))
 
 genJetReclusterTable = simpleGenJetFlatTableProducer.clone(
     src = cms.InputTag("genJetRecluster"),
@@ -231,7 +225,7 @@ genJetFlavourAlgoTable = cms.EDProducer("GenJetFlavourAlgoTableProducer",
     )
 )
 
-genJetFlavourAlgoTableTask = cms.Task(prunedGenParticlesNoNu,
+genJetFlavourAlgoTableTask = cms.Task(packedGenParticlesForJetsNoNu,
                                       #genJetRecluster, genJetReclusterTable,
                                       SDFJet,
                                       CMPJet,
