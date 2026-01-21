@@ -8,6 +8,12 @@ typedef SimpleFlatTableProducer<reco::PFCandidate> SimplePFCandidateFlatTablePro
 #include "DataFormats/METReco/interface/MET.h"
 typedef SimpleFlatTableProducer<reco::MET> SimpleMETFlatTableProducer;
 
+#include "DataFormats/METReco/interface/CaloMET.h"
+typedef SimpleFlatTableProducer<reco::CaloMET> SimpleCaloMETFlatTableProducer;
+
+#include "DataFormats/METReco/interface/PFMET.h"
+typedef SimpleFlatTableProducer<reco::PFMET> SimplePFMETFlatTableProducer;
+
 #include "DataFormats/TauReco/interface/PFTau.h"
 typedef SimpleFlatTableProducer<reco::PFTau> SimplePFTauCandidateFlatTableProducer;
 
@@ -21,6 +27,9 @@ typedef SimpleFlatTableProducer<reco::SuperCluster> SimpleSuperclusterFlatTableP
 
 #include "DataFormats/JetReco/interface/PFJet.h"
 typedef SimpleFlatTableProducer<reco::PFJet> SimplePFJetFlatTableProducer;
+
+#include "DataFormats/JetReco/interface/CaloJet.h"
+typedef SimpleFlatTableProducer<reco::CaloJet> SimpleCaloJetFlatTableProducer;
 
 #include "DataFormats/JetReco/interface/GenJet.h"
 typedef SimpleFlatTableProducer<reco::GenJet> SimpleGenJetFlatTableProducer;
@@ -80,11 +89,14 @@ typedef SimpleFlatTableProducer<pat::CompositeCandidate> SimpleCompositeCandidat
 DEFINE_FWK_MODULE(SimpleCandidateFlatTableProducer);
 DEFINE_FWK_MODULE(SimplePFCandidateFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleMETFlatTableProducer);
+DEFINE_FWK_MODULE(SimplePFMETFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleCaloMETFlatTableProducer);
 DEFINE_FWK_MODULE(SimplePFTauCandidateFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleCandidateCollectionFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleTrackFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleSuperclusterFlatTableProducer);
 DEFINE_FWK_MODULE(SimplePFJetFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleCaloJetFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleGenJetFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleVertexFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleSecondaryVertexFlatTableProducer);
