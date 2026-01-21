@@ -114,4 +114,7 @@ autoNANO = {
     # Tau embedding NanoAOD (includes Data as well as MC tables with an addition tau embedding table)
     'TauEmbedding': {'sequence': '@PHYS+PhysicsTools/NanoAOD/nano_cff.nanoSequenceFS+TauAnalysis/MCEmbeddingTools/Nano_cff.embeddingTable_seq',
                      'customize': '@PHYS'},
+    # HLT
+    'HLT' : {'sequence' : 'PhysicsTools/NanoAOD/custom_hlt_cff',
+             'customize' : 'PhysicsTools/NanoAOD/custom_hlt_cff.nanoAOD_customizeCommon'},
 }
